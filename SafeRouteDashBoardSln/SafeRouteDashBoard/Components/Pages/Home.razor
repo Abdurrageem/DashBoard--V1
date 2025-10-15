@@ -1,0 +1,321 @@
+@page "/"
+@rendermode InteractiveServer
+@inject IDashboardService DashboardService
+@inject IDriverService DriverService
+@inject IAlertService AlertService
+
+<PageTitle>Dashboard - SafeRoute Operations</PageTitle>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        <MudText Typo="Typo.h6">Loading dashboard...</MudText>
+    </MudStack>
+}
+else
+{
+    @* KPI Cards Row *@
+    <MudGrid Spacing="3" Style="margin-bottom: 24px;">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Active Drivers"
+                     Value="@($"{kpiMetrics.ActiveDriversCount} of {kpiMetrics.TotalDrivers}")"
+                     Icon="@Icons.Material.Filled.People"
+                     IconColor="#10B981"
+                     ChangePercentage="5.2"
+                     ChangeLabel="from yesterday"
+                     TrendData="@kpiMetrics.ActiveDriversTrend" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Deliveries Today"
+                     Value="@kpiMetrics.DeliveriesToday.ToString()"
+                     Subtitle="@($"{kpiMetrics.OnTimePercentage:F1}% on time")"
+                     Icon="@Icons.Material.Filled.LocalShipping"
+                     IconColor="#3B82F6"
+                     ChangePercentage="8.3"
+                     ChangeLabel="from yesterday"
+                     TrendData="@kpiMetrics.DeliveriesTrend" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Active Alerts"
+                     Value="@kpiMetrics.ActiveAlertsCount.ToString()"
+                     Subtitle="1 critical"
+                     Icon="@Icons.Material.Filled.Warning"
+                     IconColor="#EF4444"
+                     ChangePercentage="-15.2"
+                     ChangeLabel="from yesterday"
+                     ShowChange="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Fleet Safety"
+                     Value="@kpiMetrics.FleetSafetyScore.ToString()"
+                     Subtitle="average score"
+                     Icon="@Icons.Material.Filled.Shield"
+                     IconColor="#8B5CF6"
+                     ChangePercentage="2.3"
+                     ChangeLabel="from yesterday"
+                     TrendData="@kpiMetrics.SafetyScoreTrend" />
+        </MudItem>
+    </MudGrid>
+
+    @* Main Content: Map and Driver Sidebar *@
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="8">
+            @* Fleet Map *@
+            <MudPaper Elevation="2" Style="padding: 20px; border-radius: 12px; min-height: 600px;">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.h6" Style="font-weight: 700;">Real-time Fleet Map</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Circle" Style="animation: pulse 2s infinite;">
+                                LIVE
+                            </MudChip>
+                        </MudStack>
+                        <MudStack Row="true" Spacing="1">
+                            <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" Size="Size.Small" />
+                            <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" Size="Size.Small" />
+                            <MudIconButton Icon="@Icons.Material.Filled.MyLocation" Size="Size.Small" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" Size="Size.Small" />
+                        </MudStack>
+                    </MudStack>
+
+                    @* Map Placeholder *@
+                    <div style="width: 100%; height: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Large" Style="color: white; font-size: 64px;" />
+                            <MudText Typo="Typo.h5" Style="color: white; font-weight: 600;">Interactive Fleet Map</MudText>
+                            <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.8);">Showing @activeDrivers.Count active drivers</MudText>
+                        </MudStack>
+
+                        @* Map Controls Overlay *@
+                        <div style="position: absolute; top: 16px; right: 16px;">
+                            <MudStack Spacing="1">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Style="background-color: rgba(255,255,255,0.9);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Traffic" Size="Size.Small" /> Traffic
+                                </MudChip>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Style="background-color: rgba(255,255,255,0.9);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Dangerous" Size="Size.Small" /> Risk Zones
+                                </MudChip>
+                            </MudStack>
+                        </div>
+                    </div>
+
+                    @* Map Legend *@
+                    <MudStack Row="true" Spacing="3" Style="margin-top: 8px;">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <div style="width: 12px; height: 12px; background-color: #10B981; border-radius: 50%;"></div>
+                            <MudText Typo="Typo.caption">Active (@driverStats.ActiveCount)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <div style="width: 12px; height: 12px; background-color: #F59E0B; border-radius: 50%;"></div>
+                            <MudText Typo="Typo.caption">On Break (@driverStats.OnBreakCount)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <div style="width: 12px; height: 12px; background-color: #EF4444; border-radius: 50%;"></div>
+                            <MudText Typo="Typo.caption">Emergency (@driverStats.EmergencyCount)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <div style="width: 12px; height: 12px; background-color: #6B7280; border-radius: 50%;"></div>
+                            <MudText Typo="Typo.caption">Offline (@driverStats.OfflineCount)</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            @* Active Drivers Sidebar *@
+            <MudPaper Elevation="2" Style="padding: 20px; border-radius: 12px; max-height: 650px; overflow-y: auto;">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6" Style="font-weight: 700;">Active Drivers</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #6B7280;">@activeDrivers.Count of @driverStats.TotalCount</MudText>
+                    </MudStack>
+
+                    @* Filter Pills *@
+                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                        <MudChip T="string" 
+                                 Size="Size.Small" 
+                                 Color="@(selectedFilter == "All" ? Color.Dark : Color.Default)"
+                                 Variant="@(selectedFilter == "All" ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => FilterDrivers("All"))">
+                            All (@driverStats.TotalCount)
+                        </MudChip>
+                        <MudChip T="string" 
+                                 Size="Size.Small" 
+                                 Color="@(selectedFilter == "Active" ? Color.Success : Color.Default)"
+                                 Variant="@(selectedFilter == "Active" ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => FilterDrivers("Active"))">
+                            Active (@driverStats.ActiveCount)
+                        </MudChip>
+                        <MudChip T="string" 
+                                 Size="Size.Small" 
+                                 Color="@(selectedFilter == "OnBreak" ? Color.Warning : Color.Default)"
+                                 Variant="@(selectedFilter == "OnBreak" ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => FilterDrivers("OnBreak"))">
+                            On Break (@driverStats.OnBreakCount)
+                        </MudChip>
+                        <MudChip T="string" 
+                                 Size="Size.Small" 
+                                 Color="@(selectedFilter == "Offline" ? Color.Default : Color.Default)"
+                                 Variant="@(selectedFilter == "Offline" ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => FilterDrivers("Offline"))">
+                            Offline (@driverStats.OfflineCount)
+                        </MudChip>
+                        <MudChip T="string" 
+                                 Size="Size.Small" 
+                                 Color="@(selectedFilter == "Emergency" ? Color.Error : Color.Default)"
+                                 Variant="@(selectedFilter == "Emergency" ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => FilterDrivers("Emergency"))">
+                            Emergency (@driverStats.EmergencyCount)
+                        </MudChip>
+                    </MudStack>
+
+                    @* Driver Cards List *@
+                    <MudStack Spacing="2" Style="margin-top: 16px;">
+                        @if (filteredDrivers.Any())
+                        {
+                            @foreach (var driver in filteredDrivers)
+                            {
+                                <DriverCard Driver="@driver" ShowActions="false" />
+                            }
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Style="color: #6B7280; text-align: center; padding: 32px;">
+                                No drivers in this category
+                            </MudText>
+                        }
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Recent Alerts Section *@
+    @if (activeAlerts.Any())
+    {
+        <MudPaper Elevation="2" Style="padding: 20px; border-radius: 12px; margin-top: 24px;">
+            <MudStack Spacing="2">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudText Typo="Typo.h6" Style="font-weight: 700;">Recent Alerts</MudText>
+                        <MudBadge Content="@activeAlerts.Count.ToString()" Color="Color.Error" Overlap="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Notifications" />
+                        </MudBadge>
+                    </MudStack>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/safety">View All</MudButton>
+                </MudStack>
+
+                <MudGrid Spacing="2">
+                    @foreach (var alert in activeAlerts.Take(3))
+                    {
+                        <MudItem xs="12" md="4">
+                            <AlertCard Alert="@alert" 
+                                      OnDismiss="async () => await DismissAlert(alert.Id)" 
+                                      OnResolve="async () => await ResolveAlert(alert.Id)" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudStack>
+        </MudPaper>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private KpiMetrics kpiMetrics = new();
+    private List<Driver> activeDrivers = new();
+    private List<Driver> filteredDrivers = new();
+    private List<Alert> activeAlerts = new();
+    private DriverStatistics driverStats = new();
+    private string selectedFilter = "All";
+    private System.Threading.Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        
+        // Start auto-refresh timer (every 5 seconds)
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await RefreshData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            kpiMetrics = await DashboardService.GetKpiMetricsAsync();
+            activeDrivers = await DriverService.GetActiveDriversAsync();
+            activeAlerts = await AlertService.GetActiveAlertsAsync();
+            driverStats = await DriverService.GetDriverStatisticsAsync();
+            
+            FilterDrivers("All");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        // Refresh without showing loading indicator
+        kpiMetrics = await DashboardService.GetKpiMetricsAsync();
+        activeDrivers = await DriverService.GetActiveDriversAsync();
+        activeAlerts = await AlertService.GetActiveAlertsAsync();
+        driverStats = await DriverService.GetDriverStatisticsAsync();
+        
+        FilterDrivers(selectedFilter);
+    }
+
+    private void FilterDrivers(string filter)
+    {
+        selectedFilter = filter;
+        
+        filteredDrivers = filter switch
+        {
+            "Active" => activeDrivers.Where(d => d.Status == DriverStatus.Active).ToList(),
+            "OnBreak" => activeDrivers.Where(d => d.Status == DriverStatus.OnBreak).ToList(),
+            "Offline" => activeDrivers.Where(d => d.Status == DriverStatus.Offline).ToList(),
+            "Emergency" => activeDrivers.Where(d => d.Status == DriverStatus.Emergency).ToList(),
+            _ => activeDrivers
+        };
+    }
+
+    private async Task DismissAlert(string alertId)
+    {
+        await AlertService.DismissAlertAsync(alertId);
+        activeAlerts = await AlertService.GetActiveAlertsAsync();
+    }
+
+    private async Task ResolveAlert(string alertId)
+    {
+        await AlertService.ResolveAlertAsync(alertId);
+        activeAlerts = await AlertService.GetActiveAlertsAsync();
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+}
+
+<style>
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+</style>

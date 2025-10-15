@@ -1,0 +1,404 @@
+@page "/settings"
+@rendermode InteractiveServer
+
+<PageTitle>Settings - SafeRoute Operations</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Style="padding: 32px 24px;">
+    <MudStack Spacing="3" Style="margin-bottom: 32px;">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <div>
+                <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1F2937;">Settings</MudText>
+            </div>
+            
+            <MudButton Variant="Variant.Filled"
+                      StartIcon="@Icons.Material.Filled.Save"
+                      Style="@GetSaveButtonStyle()"
+                      Disabled="@(!hasUnsavedChanges)"
+                      OnClick="SaveChanges">
+                Save Changes
+            </MudButton>
+        </MudStack>
+        
+        <MudDivider Style="border-color: #E5E7EB;" />
+    </MudStack>
+
+    @* Centered Icon and Title *@
+    <MudStack AlignItems="AlignItems.Center" Style="margin: 48px 0;">
+        <MudIcon Icon="@Icons.Material.Filled.Settings" Style="color: #1F2937; font-size: 120px;" />
+        <MudText Typo="Typo.h5" Style="color: #1F2937; font-weight: 600; margin-top: 16px;">System Configuration</MudText>
+        <MudText Typo="Typo.body1" Style="color: #6B7280; text-align: center; max-width: 600px;">
+            Configure system settings, user permissions, and integrations.
+        </MudText>
+    </MudStack>
+
+    @* Tabbed Interface *@
+    <MudPaper Elevation="1" Style="border-radius: 12px; border: 1px solid #E5E7EB; background-color: white; margin-top: 48px;">
+        <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            @* General Tab *@
+            <MudTabPanel Text="General" Icon="@Icons.Material.Filled.Settings">
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="companyName"
+                                 Label="Company Name"
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: white;"
+                                 OnInput="MarkAsChanged" />
+
+                    <MudSelect @bind-Value="timezone"
+                              Label="Timezone"
+                              Variant="Variant.Outlined"
+                              OnValueChanged="MarkAsChanged">
+                        <MudSelectItem Value="@("Africa/Johannesburg")">South Africa (CAT/SAST)</MudSelectItem>
+                        <MudSelectItem Value="@("UTC")">UTC</MudSelectItem>
+                        <MudSelectItem Value="@("Africa/Cairo")">Cairo (EET)</MudSelectItem>
+                        <MudSelectItem Value="@("Africa/Lagos")">Lagos (WAT)</MudSelectItem>
+                    </MudSelect>
+
+                    <MudSelect @bind-Value="language"
+                              Label="Language"
+                              Variant="Variant.Outlined"
+                              OnValueChanged="MarkAsChanged">
+                        <MudSelectItem Value="@("en-ZA")">English (South Africa)</MudSelectItem>
+                        <MudSelectItem Value="@("af-ZA")">Afrikaans</MudSelectItem>
+                        <MudSelectItem Value="@("zu-ZA")">Zulu</MudSelectItem>
+                        <MudSelectItem Value="@("xh-ZA")">Xhosa</MudSelectItem>
+                    </MudSelect>
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Style="color: #1F2937; margin-bottom: 8px;">Date Format</MudText>
+                        <MudRadioGroup T="string" @bind-SelectedOption="dateFormat">
+                            <MudRadio T="string" Option="@("MM/DD/YYYY")" Color="Color.Default" Style="color: #1F2937;">MM/DD/YYYY</MudRadio>
+                            <MudRadio T="string" Option="@("DD/MM/YYYY")" Color="Color.Default" Style="color: #1F2937;">DD/MM/YYYY</MudRadio>
+                            <MudRadio T="string" Option="@("YYYY-MM-DD")" Color="Color.Default" Style="color: #1F2937;">YYYY-MM-DD</MudRadio>
+                        </MudRadioGroup>
+                    </div>
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Style="color: #1F2937; margin-bottom: 8px;">Time Format</MudText>
+                        <MudRadioGroup T="string" @bind-SelectedOption="timeFormat">
+                            <MudRadio T="string" Option="@("12h")" Color="Color.Default" Style="color: #1F2937;">12-hour</MudRadio>
+                            <MudRadio T="string" Option="@("24h")" Color="Color.Default" Style="color: #1F2937;">24-hour</MudRadio>
+                        </MudRadioGroup>
+                    </div>
+                </MudStack>
+            </MudTabPanel>
+
+            @* Notifications Tab *@
+            <MudTabPanel Text="Notifications" Icon="@Icons.Material.Filled.Notifications">
+                <MudStack Spacing="4">
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Email Notifications</MudText>
+                        <MudSwitch T="bool" @bind-Checked="emailNotifications" Color="Color.Default" Style="color: #1F2937;">Enable email notifications</MudSwitch>
+                        <MudTextField @bind-Value="emailAddress"
+                                     Label="Email Address"
+                                     Variant="Variant.Outlined"
+                                     Style="margin-top: 16px; background-color: white;"
+                                     Disabled="@(!emailNotifications)"
+                                     OnInput="MarkAsChanged" />
+                    </div>
+
+                    <MudDivider Style="border-color: #E5E7EB;" />
+
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">SMS Alerts</MudText>
+                        <MudSwitch T="bool" @bind-Checked="smsAlerts" Color="Color.Default" Style="color: #1F2937;">Enable SMS alerts</MudSwitch>
+                        <MudTextField @bind-Value="phoneNumber"
+                                     Label="Phone Number"
+                                     Variant="Variant.Outlined"
+                                     Style="margin-top: 16px; background-color: white;"
+                                     Disabled="@(!smsAlerts)"
+                                     OnInput="MarkAsChanged" />
+                    </div>
+
+                    <MudDivider Style="border-color: #E5E7EB;" />
+
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Push Notifications</MudText>
+                        <MudSwitch T="bool" @bind-Checked="pushNotifications" Color="Color.Default" Style="color: #1F2937;">Enable push notifications</MudSwitch>
+                    </div>
+
+                    <MudDivider Style="border-color: #E5E7EB;" />
+
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Alert Thresholds</MudText>
+                        <MudNumericField @bind-Value="criticalAlertThreshold"
+                                        Label="Critical Alert Threshold"
+                                        Variant="Variant.Outlined"
+                                        Style="background-color: white;"
+                                        OnInput="MarkAsChanged" />
+                        <MudNumericField @bind-Value="highAlertThreshold"
+                                        Label="High Alert Threshold"
+                                        Variant="Variant.Outlined"
+                                        Style="margin-top: 16px; background-color: white;"
+                                        OnInput="MarkAsChanged" />
+                    </div>
+                </MudStack>
+            </MudTabPanel>
+
+            @* Users & Permissions Tab *@
+            <MudTabPanel Text="Users & Permissions" Icon="@Icons.Material.Filled.People">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600;">User Management</MudText>
+                        <MudButton Variant="Variant.Filled"
+                                  StartIcon="@Icons.Material.Filled.Add"
+                                  Style="background-color: #1F2937; color: white;"
+                                  OnClick="AddUser">
+                            Add User
+                        </MudButton>
+                    </MudStack>
+
+                    <MudTable Items="@users" Hover="true" Breakpoint="Breakpoint.Sm" Style="background-color: white;">
+                        <HeaderContent>
+                            <MudTh Style="color: #1F2937; font-weight: 600;">Name</MudTh>
+                            <MudTh Style="color: #1F2937; font-weight: 600;">Email</MudTh>
+                            <MudTh Style="color: #1F2937; font-weight: 600;">Role</MudTh>
+                            <MudTh Style="color: #1F2937; font-weight: 600;">Status</MudTh>
+                            <MudTh Style="color: #1F2937; font-weight: 600;">Last Login</MudTh>
+                            <MudTh Style="color: #1F2937; font-weight: 600;">Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Name">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudAvatar Size="Size.Small" Color="Color.Default" Style="background-color: #F5F5F5; color: #1F2937;">
+                                        @GetInitials(context.Name)
+                                    </MudAvatar>
+                                    <MudText Typo="Typo.body2" Style="color: #1F2937; font-weight: 500;">@context.Name</MudText>
+                                </MudStack>
+                            </MudTd>
+                            <MudTd DataLabel="Email">
+                                <MudText Typo="Typo.body2" Style="color: #6B7280;">@context.Email</MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Role">
+                                <MudChip T="string" Size="Size.Small" Style="background-color: #1F2937; color: white;">
+                                    @context.Role.ToString()
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Size="Size.Small" Style="@GetStatusStyle(context.Status)">
+                                    @context.Status.ToString()
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Last Login">
+                                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                                    @(context.LastLogin?.ToString("MMM dd, yyyy") ?? "Never")
+                                </MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Actions">
+                                <MudStack Row="true" Spacing="0">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #1F2937;" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #1F2937;" />
+                                </MudStack>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudStack>
+            </MudTabPanel>
+
+            @* Integrations Tab *@
+            <MudTabPanel Text="Integrations" Icon="@Icons.Material.Filled.Extension">
+                <MudStack Spacing="4">
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">API Keys</MudText>
+                        <MudButton Variant="Variant.Outlined"
+                                  StartIcon="@Icons.Material.Filled.Add"
+                                  Style="color: #1F2937; border-color: #1F2937; margin-bottom: 16px;">
+                            Generate New Key
+                        </MudButton>
+                        
+                        <MudStack Spacing="2">
+                            <MudPaper Elevation="0" Style="padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <div>
+                                        <MudText Typo="Typo.body2" Style="color: #1F2937; font-weight: 500;">Production API Key</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">sk_live_••••••••••••••••</MudText>
+                                    </div>
+                                    <MudStack Row="true" Spacing="1">
+                                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" Style="color: #1F2937;" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="color: #1F2937;" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #1F2937;" />
+                                    </MudStack>
+                                </MudStack>
+                            </MudPaper>
+                        </MudStack>
+                    </div>
+
+                    <MudDivider Style="border-color: #E5E7EB;" />
+
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Third-Party Integrations</MudText>
+                        
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="4">
+                                <MudPaper Elevation="0" Style="padding: 24px; border-radius: 8px; border: 1px solid #E5E7EB; text-align: center;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Map" Style="color: #1F2937; font-size: 48px; margin-bottom: 16px;" />
+                                    <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 8px;">Google Maps</MudText>
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #F5F5F5; color: #1F2937; margin-bottom: 16px;">
+                                        Connected
+                                    </MudChip>
+                                    <MudButton Variant="Variant.Outlined" FullWidth="true" Style="color: #1F2937; border-color: #1F2937;">
+                                        Configure
+                                    </MudButton>
+                                </MudPaper>
+                            </MudItem>
+
+                            <MudItem xs="12" md="4">
+                                <MudPaper Elevation="0" Style="padding: 24px; border-radius: 8px; border: 1px solid #E5E7EB; text-align: center;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Phone" Style="color: #1F2937; font-size: 48px; margin-bottom: 16px;" />
+                                    <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 8px;">Twilio</MudText>
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #D1D5DB; color: #1F2937; margin-bottom: 16px;">
+                                        Disconnected
+                                    </MudChip>
+                                    <MudButton Variant="Variant.Outlined" FullWidth="true" Style="color: #1F2937; border-color: #1F2937;">
+                                        Connect
+                                    </MudButton>
+                                </MudPaper>
+                            </MudItem>
+
+                            <MudItem xs="12" md="4">
+                                <MudPaper Elevation="0" Style="padding: 24px; border-radius: 8px; border: 1px solid #E5E7EB; text-align: center;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Payment" Style="color: #1F2937; font-size: 48px; margin-bottom: 16px;" />
+                                    <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 8px;">Stripe</MudText>
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #F5F5F5; color: #1F2937; margin-bottom: 16px;">
+                                        Connected
+                                    </MudChip>
+                                    <MudButton Variant="Variant.Outlined" FullWidth="true" Style="color: #1F2937; border-color: #1F2937;">
+                                        Configure
+                                    </MudButton>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudStack>
+            </MudTabPanel>
+
+            @* Appearance Tab *@
+            <MudTabPanel Text="Appearance" Icon="@Icons.Material.Filled.Palette">
+                <MudStack Spacing="4">
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Theme</MudText>
+                        <MudRadioGroup T="string" @bind-SelectedOption="theme">
+                            <MudRadio T="string" Option="@("Light")" Color="Color.Default" Style="color: #1F2937;">Light (Current)</MudRadio>
+                            <MudRadio T="string" Option="@("Dark")" Color="Color.Default" Style="color: #1F2937;" Disabled="true">Dark (Coming Soon)</MudRadio>
+                        </MudRadioGroup>
+                    </div>
+
+                    <MudDivider Style="border-color: #E5E7EB;" />
+
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Logo</MudText>
+                        <MudPaper Elevation="0" Style="padding: 24px; border-radius: 8px; border: 1px dashed #E5E7EB; text-align: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="color: #6B7280; font-size: 48px; margin-bottom: 16px;" />
+                            <MudText Typo="Typo.body1" Style="color: #6B7280; margin-bottom: 16px;">Upload your company logo</MudText>
+                            <MudButton Variant="Variant.Outlined" Style="color: #1F2937; border-color: #1F2937;">
+                                Choose File
+                            </MudButton>
+                        </MudPaper>
+                    </div>
+
+                    <MudDivider Style="border-color: #E5E7EB;" />
+
+                    <div>
+                        <MudText Typo="Typo.h6" Style="color: #1F2937; font-weight: 600; margin-bottom: 16px;">Font Size</MudText>
+                        <MudRadioGroup T="string" @bind-SelectedOption="fontSize">
+                            <MudRadio T="string" Option="@("Small")" Color="Color.Default" Style="color: #1F2937;">Small</MudRadio>
+                            <MudRadio T="string" Option="@("Medium")" Color="Color.Default" Style="color: #1F2937;">Medium</MudRadio>
+                            <MudRadio T="string" Option="@("Large")" Color="Color.Default" Style="color: #1F2937;">Large</MudRadio>
+                        </MudRadioGroup>
+                    </div>
+                </MudStack>
+            </MudTabPanel>
+        </MudTabs>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool hasUnsavedChanges = false;
+
+    // General settings
+    private string companyName = "SafeRoute Logistics SA";
+    private string timezone = "Africa/Johannesburg";
+    private string language = "en-ZA";
+    private string dateFormat = "DD/MM/YYYY";
+    private string timeFormat = "24h";
+
+    // Notification settings
+    private bool emailNotifications = true;
+    private string emailAddress = "admin@saferoute.co.za";
+    private bool smsAlerts = true;
+    private string phoneNumber = "+27 82 123 4567";
+    private bool pushNotifications = true;
+    private int criticalAlertThreshold = 3;
+    private int highAlertThreshold = 5;
+
+    // Users
+    private List<User> users = new()
+    {
+        new User { Name = "John Doe", Email = "john@saferoute.co.za", Role = UserRole.Admin, Status = UserStatus.Active, LastLogin = DateTime.Now.AddHours(-2) },
+        new User { Name = "Jane Smith", Email = "jane@saferoute.co.za", Role = UserRole.Manager, Status = UserStatus.Active, LastLogin = DateTime.Now.AddDays(-1) },
+        new User { Name = "Mike Johnson", Email = "mike@saferoute.co.za", Role = UserRole.Dispatcher, Status = UserStatus.Active, LastLogin = DateTime.Now.AddDays(-3) }
+    };
+
+    // Appearance settings
+    private string theme = "Light";
+    private string fontSize = "Medium";
+
+    private void MarkAsChanged()
+    {
+        hasUnsavedChanges = true;
+    }
+
+    private async Task SaveChanges()
+    {
+        // TODO: Save settings to backend
+        await Task.Delay(500);
+        hasUnsavedChanges = false;
+    }
+
+    private void AddUser()
+    {
+        // TODO: Open add user dialog
+    }
+
+    private string GetSaveButtonStyle()
+    {
+        return hasUnsavedChanges 
+            ? "background-color: #1F2937; color: white;"
+            : "background-color: #D1D5DB; color: #6B7280;";
+    }
+
+    private string GetStatusStyle(UserStatus status)
+    {
+        return status == UserStatus.Active
+            ? "background-color: #F5F5F5; color: #1F2937;"
+            : "background-color: #D1D5DB; color: #6B7280;";
+    }
+
+    private string GetInitials(string name)
+    {
+        var names = name.Split(' ');
+        return names.Length > 1 ? $"{names[0][0]}{names[1][0]}" : $"{names[0][0]}";
+    }
+}
+
+<style>
+    .mud-tabs .mud-tab {
+        color: #6B7280;
+    }
+
+    .mud-tabs .mud-tab-active {
+        color: #1F2937;
+        font-weight: 600;
+    }
+
+    .mud-tab-slider {
+        background-color: #1F2937 !important;
+    }
+
+    .mud-switch-checked .mud-switch-base {
+        background-color: #1F2937 !important;
+    }
+
+    .mud-radio .mud-radio-checked {
+        color: #1F2937 !important;
+    }
+</style>

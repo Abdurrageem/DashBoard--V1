@@ -1,0 +1,227 @@
+﻿@inherits LayoutComponentBase
+@inject INotificationService NotificationService
+
+<MudLayout>
+    @* App Bar / Header *@
+    <MudAppBar Elevation="1" Style="background-color: white; color: #1F2937;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        
+        @* Logo and Title *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="margin-right: 24px;">
+            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: #3B82F6;" Size="Size.Large" />
+            <div>
+                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1F2937;">SafeRoute</MudText>
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Operations Dashboard</MudText>
+            </div>
+        </MudStack>
+
+        @* Search Bar *@
+        <MudTextField @bind-Value="searchQuery" 
+                      Placeholder="Search drivers, routes, or locations..." 
+                      Adornment="Adornment.Start" 
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Style="max-width: 500px; flex: 1; background-color: #F5F5F5;"
+                      Class="search-field" />
+
+        <MudSpacer />
+
+        @* On-Time Status Indicator *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-right: 24px; padding: 8px 16px; background-color: #F0FDF4; border-radius: 8px;">
+            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Style="color: #10B981;" Size="Size.Small" />
+            <MudText Typo="Typo.body2" Style="color: #10B981; font-weight: 600;">94.2% On-Time</MudText>
+        </MudStack>
+
+        @* Notifications *@
+        <MudBadge Content="@notificationCount.ToString()" Color="Color.Error" Overlap="true" Class="mx-2">
+            <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" OnClick="@ToggleNotifications" />
+        </MudBadge>
+
+        @* User Avatar with Menu *@
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudAvatar Color="Color.Primary" Style="cursor: pointer;">JD</MudAvatar>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Settings">Settings</MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout">Logout</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+
+    @* Side Drawer / Navigation *@
+    <MudDrawer @bind-Open="@drawerOpen" Elevation="2" Variant="@DrawerVariant.Persistent" Style="background-color: #2D2D2D;">
+        <MudDrawerHeader Style="background-color: #2D2D2D; padding: 16px;">
+            <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;">Navigation</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu Style="padding: 8px;">
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Primary" Style="@GetNavStyle()">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Dashboard</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Overview & metrics</MudText>
+                </MudStack>
+            </MudNavLink>
+            <MudNavLink Href="/drivers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People" IconColor="Color.Primary" Style="@GetNavStyle()">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Drivers</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Driver management</MudText>
+                </MudStack>
+            </MudNavLink>
+            <MudNavLink Href="/routes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Route" IconColor="Color.Primary" Style="@GetNavStyle()">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Routes</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Route optimization</MudText>
+                </MudStack>
+            </MudNavLink>
+            <MudNavLink Href="/analytics" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Analytics" IconColor="Color.Primary" Style="@GetNavStyle()">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Analytics</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Performance data</MudText>
+                </MudStack>
+            </MudNavLink>
+            <MudNavLink Href="/safety" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary" Style="@GetNavStyle()">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Safety Reports</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Risk & incidents</MudText>
+                </MudStack>
+            </MudNavLink>
+            <MudNavLink Href="/settings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Primary" Style="@GetNavStyle()">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Settings</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">System configuration</MudText>
+                </MudStack>
+            </MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    @* Main Content *@
+    <MudMainContent Style="background-color: #FAFAFA; min-height: 100vh;">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Style="padding: 24px;">
+            @Body
+        </MudContainer>
+
+        @* Footer *@
+        <MudPaper Elevation="0" Style="@GetFooterStyle()">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <div style="width: 8px; height: 8px; background-color: #10B981; border-radius: 50%;"></div>
+                    <MudText Typo="Typo.body2" Style="color: #6B7280; font-weight: 500;">System Status: Online</MudText>
+                </MudStack>
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Last update: @lastUpdateSeconds seconds ago</MudText>
+            </MudStack>
+        </MudPaper>
+    </MudMainContent>
+</MudLayout>
+
+@* Notification Drawer *@
+<MudDrawer @bind-Open="@notificationDrawerOpen" Anchor="Anchor.Right" Elevation="2" Variant="@DrawerVariant.Temporary" Width="400px">
+    <MudDrawerHeader>
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width: 100%;">
+            <MudText Typo="Typo.h6">Notifications</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@ToggleNotifications" />
+        </MudStack>
+    </MudDrawerHeader>
+    <MudDivider />
+    <div style="padding: 16px;">
+        @if (notifications != null && notifications.Any())
+        {
+            <MudStack Spacing="2">
+                @foreach (var notification in notifications)
+                {
+                    <MudPaper Elevation="1" Style="padding: 12px; border-radius: 8px; cursor: pointer;" @onclick="() => MarkAsRead(notification.Id)">
+                        <MudStack Spacing="1">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">@notification.Title</MudText>
+                                @if (!notification.IsRead)
+                                {
+                                    <div style="width: 8px; height: 8px; background-color: #3B82F6; border-radius: 50%;"></div>
+                                }
+                            </MudStack>
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">@notification.Message</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #9CA3AF;">@notification.GetRelativeTime()</MudText>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Style="color: #6B7280; text-align: center; padding: 32px;">No notifications</MudText>
+        }
+    </div>
+</MudDrawer>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private bool drawerOpen = true;
+    private bool notificationDrawerOpen = false;
+    private string searchQuery = "";
+    private int notificationCount = 3;
+    private int lastUpdateSeconds = 2;
+    private List<Notification> notifications = new();
+    private System.Threading.Timer? updateTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        notifications = await NotificationService.GetNotificationsAsync("user-001");
+        notificationCount = NotificationService.GetUnreadCount("user-001");
+
+        // Start timer for last update seconds
+        updateTimer = new System.Threading.Timer(async _ =>
+        {
+            lastUpdateSeconds = (lastUpdateSeconds + 1) % 60;
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private void ToggleDrawer()
+    {
+        drawerOpen = !drawerOpen;
+    }
+
+    private void ToggleNotifications()
+    {
+        notificationDrawerOpen = !notificationDrawerOpen;
+    }
+
+    private async Task MarkAsRead(string notificationId)
+    {
+        await NotificationService.MarkAsReadAsync(notificationId);
+        notifications = await NotificationService.GetNotificationsAsync("user-001");
+        notificationCount = NotificationService.GetUnreadCount("user-001");
+    }
+
+    private string GetNavStyle()
+    {
+        return "border-radius: 8px; margin: 4px 0; padding: 12px;";
+    }
+
+    private string GetFooterStyle()
+    {
+        var leftPosition = drawerOpen ? "240px" : "0";
+        return $"padding: 16px; background-color: white; border-top: 1px solid #E5E7EB; position: fixed; bottom: 0; left: {leftPosition}; right: 0; transition: left 0.3s ease;";
+    }
+
+    public void Dispose()
+    {
+        updateTimer?.Dispose();
+    }
+}
+
+<style>
+    .search-field {
+        border-radius: 8px;
+    }
+
+    .mud-nav-link-active {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+</style>

@@ -1,0 +1,362 @@
+@page "/drivers"
+@rendermode InteractiveServer
+@inject IDriverService DriverService
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<PageTitle>Driver Management - SafeRoute Operations</PageTitle>
+
+<PageHeader Title="Driver Management"
+            Subtitle="Manage and monitor all drivers"
+            LastUpdateTime="@lastUpdateTime"
+            IsSyncing="@isSyncing"
+            OnRefresh="RefreshData">
+    <ActionButtons>
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.FileDownload"
+                   Style="background-color: #1F2937; color: white;"
+                   OnClick="ExportReport">
+            Export Report
+        </MudButton>
+    </ActionButtons>
+</PageHeader>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+        <MudProgressCircular Color="Color.Default" Size="Size.Large" Indeterminate="true" Style="color: #1F2937;" />
+        <MudText Typo="Typo.h6" Style="color: #6B7280;">Loading drivers...</MudText>
+    </MudStack>
+}
+else
+{
+    @* Summary Cards Row *@
+    <MudGrid Spacing="3" Style="margin-bottom: 32px;">
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@driverStats.TotalCount.ToString()"
+                        Label="Total Drivers"
+                        Icon="@Icons.Material.Filled.People"
+                        IconBackgroundColor="#F5F5F5" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@driverStats.ActiveCount.ToString()"
+                        Label="Active Now"
+                        Subtitle="Currently online"
+                        Icon="@Icons.Material.Filled.CheckCircle"
+                        IconBackgroundColor="#F0FDF4" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@driverStats.OnBreakCount.ToString()"
+                        Label="On Break"
+                        Icon="@Icons.Material.Filled.Pause"
+                        IconBackgroundColor="#FFFBEB" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@driverStats.OfflineCount.ToString()"
+                        Label="Offline"
+                        Icon="@Icons.Material.Filled.CloudOff"
+                        IconBackgroundColor="#F5F5F5" />
+        </MudItem>
+    </MudGrid>
+
+    @* Filter Bar *@
+    <MudPaper Elevation="1" Style="padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #E5E7EB;">
+        <MudStack Spacing="3">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudTextField @bind-Value="searchQuery"
+                             Placeholder="Search by name, ID, or location..."
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Style="max-width: 400px; background-color: white;"
+                             OnKeyUp="OnSearchChanged" />
+
+                <MudStack Row="true" Spacing="2">
+                    <MudSelect @bind-Value="sortBy" 
+                              Variant="Variant.Outlined" 
+                              Margin="Margin.Dense"
+                              Style="min-width: 200px;"
+                              Label="Sort by">
+                        <MudSelectItem Value="@("Name")">Name</MudSelectItem>
+                        <MudSelectItem Value="@("Status")">Status</MudSelectItem>
+                        <MudSelectItem Value="@("Deliveries")">Deliveries</MudSelectItem>
+                        <MudSelectItem Value="@("RiskScore")">Risk Score</MudSelectItem>
+                        <MudSelectItem Value="@("OnDutyTime")">On-Duty Time</MudSelectItem>
+                    </MudSelect>
+
+                    <MudButton Variant="Variant.Filled"
+                              StartIcon="@Icons.Material.Filled.Add"
+                              Style="background-color: #1F2937; color: white;"
+                              OnClick="AddNewDriver">
+                        Add New Driver
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+
+            @* Filter Chips *@
+            <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(selectedFilter == "All" ? Color.Dark : Color.Default)"
+                         Variant="@(selectedFilter == "All" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => FilterDrivers("All"))"
+                         Style="@GetChipStyle(selectedFilter == "All")">
+                    All (@driverStats.TotalCount)
+                </MudChip>
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(selectedFilter == "Active" ? Color.Dark : Color.Default)"
+                         Variant="@(selectedFilter == "Active" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => FilterDrivers("Active"))"
+                         Style="@GetChipStyle(selectedFilter == "Active")">
+                    Active (@driverStats.ActiveCount)
+                </MudChip>
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(selectedFilter == "OnBreak" ? Color.Dark : Color.Default)"
+                         Variant="@(selectedFilter == "OnBreak" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => FilterDrivers("OnBreak"))"
+                         Style="@GetChipStyle(selectedFilter == "OnBreak")">
+                    On Break (@driverStats.OnBreakCount)
+                </MudChip>
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(selectedFilter == "Offline" ? Color.Dark : Color.Default)"
+                         Variant="@(selectedFilter == "Offline" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => FilterDrivers("Offline"))"
+                         Style="@GetChipStyle(selectedFilter == "Offline")">
+                    Offline (@driverStats.OfflineCount)
+                </MudChip>
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(selectedFilter == "Emergency" ? Color.Dark : Color.Default)"
+                         Variant="@(selectedFilter == "Emergency" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => FilterDrivers("Emergency"))"
+                         Style="@GetChipStyle(selectedFilter == "Emergency")">
+                    Emergency (@driverStats.EmergencyCount)
+                </MudChip>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    @* Driver List/Grid *@
+    @if (filteredDrivers.Any())
+    {
+        <MudGrid Spacing="3">
+            @foreach (var driver in filteredDrivers.Skip(currentPage * pageSize).Take(pageSize))
+            {
+                <MudItem xs="12" md="6">
+                    <DriverCard Driver="@driver" ShowActions="true"
+                               OnViewDetails="() => ViewDriverDetails(driver.Id)"
+                               OnContact="() => ContactDriver(driver.Id)"
+                               OnViewRoute="() => ViewDriverRoute(driver.Id)" />
+                </MudItem>
+            }
+        </MudGrid>
+
+        @* Pagination *@
+        <MudStack AlignItems="AlignItems.Center" Style="margin-top: 32px;">
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                Showing @((currentPage * pageSize) + 1)-@Math.Min((currentPage + 1) * pageSize, filteredDrivers.Count) of @filteredDrivers.Count drivers
+            </MudText>
+            <MudPagination Count="@totalPages" 
+                          Selected="@(currentPage + 1)" 
+                          SelectedChanged="@((int page) => OnPageChanged(page - 1))"
+                          Color="Color.Default"
+                          Style="margin-top: 16px;" />
+        </MudStack>
+    }
+    else
+    {
+        <EmptyState Icon="@Icons.Material.Filled.PeopleAlt"
+                   Title="No drivers found"
+                   Description="@GetEmptyStateMessage()">
+            <ActionButton>
+                <MudButton Variant="Variant.Filled"
+                          StartIcon="@Icons.Material.Filled.Add"
+                          Style="background-color: #1F2937; color: white;"
+                          OnClick="AddNewDriver">
+                    Add First Driver
+                </MudButton>
+            </ActionButton>
+        </EmptyState>
+    }
+}
+
+@code {
+    // MOBILE APP INTEGRATION:
+    // This page receives real-time updates from mobile drivers via SignalR
+    // Mobile app sends: location updates, status changes, delivery completions
+    // Expected API endpoints:
+    // - GET /api/drivers - Fetch all drivers
+    // - GET /api/drivers/{id} - Fetch single driver
+    // - PUT /api/drivers/{id}/status - Update driver status (from mobile)
+    // - PUT /api/drivers/{id}/location - Update driver location (from mobile)
+    // - POST /api/drivers/{id}/delivery - Increment delivery count (from mobile)
+
+    private bool isLoading = true;
+    private bool isSyncing = false;
+    private DateTime? lastUpdateTime;
+    private List<Driver> allDrivers = new();
+    private List<Driver> filteredDrivers = new();
+    private DriverStatistics driverStats = new();
+    private string selectedFilter = "All";
+    private string searchQuery = "";
+    private string sortBy = "Name";
+    private int currentPage = 0;
+    private int pageSize = 10;
+    private int totalPages => (int)Math.Ceiling(filteredDrivers.Count / (double)pageSize);
+    private System.Threading.Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDriverData();
+
+        // Auto-refresh every 30 seconds
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await RefreshData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadDriverData()
+    {
+        try
+        {
+            isLoading = true;
+
+            // MOBILE APP INTEGRATION POINT
+            // This fetches all drivers - mobile app data is synced to backend
+            // API call would be: var drivers = await _httpClient.GetFromJsonAsync<List<Driver>>("api/drivers");
+            allDrivers = await DriverService.GetActiveDriversAsync();
+            driverStats = await DriverService.GetDriverStatisticsAsync();
+            
+            FilterDrivers(selectedFilter);
+            lastUpdateTime = DateTime.Now;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        isSyncing = true;
+        await LoadDriverData();
+        isSyncing = false;
+    }
+
+    private void FilterDrivers(string filter)
+    {
+        selectedFilter = filter;
+        currentPage = 0;
+
+        filteredDrivers = filter switch
+        {
+            "Active" => allDrivers.Where(d => d.Status == DriverStatus.Active).ToList(),
+            "OnBreak" => allDrivers.Where(d => d.Status == DriverStatus.OnBreak).ToList(),
+            "Offline" => allDrivers.Where(d => d.Status == DriverStatus.Offline).ToList(),
+            "Emergency" => allDrivers.Where(d => d.Status == DriverStatus.Emergency).ToList(),
+            _ => allDrivers.ToList()
+        };
+
+        ApplySearchAndSort();
+    }
+
+    private void OnSearchChanged()
+    {
+        ApplySearchAndSort();
+    }
+
+    private void ApplySearchAndSort()
+    {
+        var query = filteredDrivers.AsEnumerable();
+
+        // Apply search
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            query = query.Where(d =>
+                d.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                d.Id.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                (d.CurrentLocation?.Address?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        // Apply sort
+        query = sortBy switch
+        {
+            "Status" => query.OrderBy(d => d.Status),
+            "Deliveries" => query.OrderByDescending(d => d.DeliveryCount),
+            "RiskScore" => query.OrderByDescending(d => d.RiskScore),
+            "OnDutyTime" => query.OrderByDescending(d => d.OnDutyHours),
+            _ => query.OrderBy(d => d.Name)
+        };
+
+        filteredDrivers = query.ToList();
+    }
+
+    private void OnPageChanged(int page)
+    {
+        currentPage = page;
+    }
+
+    private string GetChipStyle(bool isSelected)
+    {
+        if (isSelected)
+        {
+            return "background-color: #1F2937; color: white;";
+        }
+        return "background-color: white; color: #1F2937; border: 1px solid #E5E7EB;";
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            return $"No drivers match your search for \"{searchQuery}\"";
+        }
+        if (selectedFilter != "All")
+        {
+            return $"No drivers with status: {selectedFilter}";
+        }
+        return "Add your first driver to get started with fleet management";
+    }
+
+    private void ViewDriverDetails(string driverId)
+    {
+        // TODO: Open driver details modal or navigate to details page
+        // NavigationManager.NavigateTo($"/drivers/{driverId}");
+    }
+
+    private void ContactDriver(string driverId)
+    {
+        // TODO: Open contact modal or initiate call
+    }
+
+    private void ViewDriverRoute(string driverId)
+    {
+        // TODO: Navigate to routes page with driver filter
+        NavigationManager.NavigateTo($"/routes?driver={driverId}");
+    }
+
+    private void AddNewDriver()
+    {
+        // TODO: Open add driver modal
+    }
+
+    private async Task ExportReport()
+    {
+        // TODO: Export drivers to PDF/Excel
+        await Task.Delay(100);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        refreshTimer?.Dispose();
+    }
+}

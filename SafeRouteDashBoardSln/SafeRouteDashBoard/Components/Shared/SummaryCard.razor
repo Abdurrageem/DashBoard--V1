@@ -1,0 +1,46 @@
+@* Summary Card Component for displaying key metrics *@
+
+<MudPaper Elevation="1" Style="@GetCardStyle()">
+    <MudStack Spacing="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.h3" Style="font-weight: 700; color: #1F2937;">
+                    @Value
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    @Label
+                </MudText>
+            </MudStack>
+            
+            @if (!string.IsNullOrEmpty(Icon))
+            {
+                <MudIcon Icon="@Icon" Style="@GetIconStyle()" Size="Size.Large" />
+            }
+        </MudStack>
+        
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <MudText Typo="Typo.caption" Style="color: #6B7280;">
+                @Subtitle
+            </MudText>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public string IconBackgroundColor { get; set; } = "#F5F5F5";
+
+    private string GetCardStyle()
+    {
+        return "padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; background-color: #FFFFFF; transition: all 0.3s ease;";
+    }
+
+    private string GetIconStyle()
+    {
+        return $"color: #1F2937; background-color: {IconBackgroundColor}; padding: 12px; border-radius: 8px;";
+    }
+}

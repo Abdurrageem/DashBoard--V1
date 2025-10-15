@@ -1,0 +1,501 @@
+@page "/safety"
+@rendermode InteractiveServer
+@inject ISafetyService SafetyService
+@inject IAlertService AlertService
+
+<PageTitle>Safety Reports - SafeRoute Operations</PageTitle>
+
+<PageHeader Title="Safety Reports"
+            Subtitle="Risk management and incident tracking"
+            LastUpdateTime="@lastUpdateTime"
+            IsSyncing="@isSyncing"
+            OnRefresh="RefreshData">
+    <ActionButtons>
+        <MudSelect @bind-Value="dateFilter"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Style="min-width: 150px; margin-right: 16px;">
+            <MudSelectItem Value="@("Today")">Today</MudSelectItem>
+            <MudSelectItem Value="@("ThisWeek")">This Week</MudSelectItem>
+            <MudSelectItem Value="@("ThisMonth")">This Month</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.FileDownload"
+                   Style="background-color: #1F2937; color: white;"
+                   OnClick="ExportReport">
+            Export Report
+        </MudButton>
+    </ActionButtons>
+</PageHeader>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+        <MudProgressCircular Color="Color.Default" Size="Size.Large" Indeterminate="true" Style="color: #1F2937;" />
+        <MudText Typo="Typo.h6" Style="color: #6B7280;">Loading safety data...</MudText>
+    </MudStack>
+}
+else
+{
+    @* Safety KPI Cards *@
+    <MudGrid Spacing="3" Style="margin-bottom: 32px;">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="1" Style="@GetMetricCardStyle()">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: #6B7280; font-weight: 500; text-transform: uppercase;">Fleet Safety Score</MudText>
+                            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1F2937; margin-top: 8px;">
+                                @safetyMetrics.FleetScore
+                            </MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: #1F2937; background-color: #F5F5F5; padding: 8px; border-radius: 8px;" />
+                    </MudStack>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Style="color: #1F2937;" />
+                        <MudText Typo="Typo.caption" Style="color: #1F2937;">
+                            +@safetyMetrics.FleetScoreChange.ToString("F1") from yesterday
+                        </MudText>
+                    </MudStack>
+                    <MudProgressLinear Value="@safetyMetrics.FleetScore" Color="Color.Default" Style="height: 8px; border-radius: 4px; background-color: #E5E7EB;" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="1" Style="@GetMetricCardStyle()">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: #6B7280; font-weight: 500; text-transform: uppercase;">Active Alerts</MudText>
+                            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1F2937; margin-top: 8px;">
+                                @safetyMetrics.ActiveAlerts
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="color: #EF4444; font-weight: 500;">
+                                @safetyMetrics.CriticalAlertCount critical
+                            </MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Style="color: #1F2937; background-color: #F5F5F5; padding: 8px; border-radius: 8px;" />
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="1" Style="@GetMetricCardStyle()">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: #6B7280; font-weight: 500; text-transform: uppercase;">On-Time Delivery</MudText>
+                            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1F2937; margin-top: 8px;">
+                                @safetyMetrics.OnTimePercentage.ToString("F1")%
+                            </MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Style="color: #1F2937; background-color: #F5F5F5; padding: 8px; border-radius: 8px;" />
+                    </MudStack>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Style="color: #1F2937;" />
+                        <MudText Typo="Typo.caption" Style="color: #1F2937;">
+                            +@safetyMetrics.OnTimeChange.ToString("F1")% from last week
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="1" Style="@GetMetricCardStyle()">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: #6B7280; font-weight: 500; text-transform: uppercase;">Incident Rate</MudText>
+                            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1F2937; margin-top: 8px;">
+                                @safetyMetrics.IncidentCount
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="color: #6B7280;">This week</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Style="color: #1F2937; background-color: #F5F5F5; padding: 8px; border-radius: 8px;" />
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Real-time Alerts Section *@
+    <MudGrid Spacing="3" Style="margin-bottom: 32px;">
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="1" Style="padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; background-color: white;">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1F2937;">Real-time Alerts</MudText>
+                            <MudBadge Content="@activeAlerts.Count.ToString()" Color="Color.Error" Overlap="true">
+                                <div style="width: 24px; height: 24px;"></div>
+                            </MudBadge>
+                        </MudStack>
+                        
+                        <MudStack Row="true" Spacing="1">
+                            <MudChip T="string" Size="Size.Small" 
+                                     Variant="@(severityFilter == "All" ? Variant.Filled : Variant.Outlined)"
+                                     Style="@GetFilterChipStyle(severityFilter == "All")"
+                                     OnClick="@(() => FilterAlerts("All"))">
+                                All
+                            </MudChip>
+                            <MudChip T="string" Size="Size.Small"
+                                     Variant="@(severityFilter == "Critical" ? Variant.Filled : Variant.Outlined)"
+                                     Style="@GetFilterChipStyle(severityFilter == "Critical")"
+                                     OnClick="@(() => FilterAlerts("Critical"))">
+                                Critical
+                            </MudChip>
+                            <MudChip T="string" Size="Size.Small"
+                                     Variant="@(severityFilter == "High" ? Variant.Filled : Variant.Outlined)"
+                                     Style="@GetFilterChipStyle(severityFilter == "High")"
+                                     OnClick="@(() => FilterAlerts("High"))">
+                                High
+                            </MudChip>
+                            <MudChip T="string" Size="Size.Small"
+                                     Variant="@(severityFilter == "Medium" ? Variant.Filled : Variant.Outlined)"
+                                     Style="@GetFilterChipStyle(severityFilter == "Medium")"
+                                     OnClick="@(() => FilterAlerts("Medium"))">
+                                Medium
+                            </MudChip>
+                        </MudStack>
+                    </MudStack>
+
+                    <div style="max-height: 600px; overflow-y: auto;">
+                        @if (filteredAlerts.Any())
+                        {
+                            <MudStack Spacing="2">
+                                @foreach (var alert in filteredAlerts)
+                                {
+                                    <AlertCard Alert="@alert"
+                                              ShowDetails="false"
+                                              OnDismiss="async () => await DismissAlert(alert.Id)"
+                                              OnResolve="async () => await ResolveAlert(alert.Id)" />
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <EmptyState Icon="@Icons.Material.Filled.CheckCircle"
+                                       Title="No active alerts"
+                                       Description="All systems operating normally" />
+                        }
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="1" Style="padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; background-color: white;">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1F2937;">Predictive Risk Insights</MudText>
+                    
+                    @foreach (var insight in safetyMetrics.Insights)
+                    {
+                        <MudPaper Elevation="0" Style="@GetInsightCardStyle()">
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@GetInsightIcon(insight.Type)" Size="Size.Small" Style="color: #1F2937;" />
+                                        <MudText Typo="Typo.subtitle2" Style="color: #1F2937; font-weight: 600;">
+                                            @insight.Title
+                                        </MudText>
+                                    </MudStack>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => DismissInsight(insight.Id)" />
+                                </MudStack>
+                                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                                    @insight.Message
+                                </MudText>
+                            </MudStack>
+                        </MudPaper>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Risk Factors Analysis *@
+    <MudPaper Elevation="1" Style="padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; background-color: white; margin-bottom: 32px;">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1F2937;">Risk Factors Analysis</MudText>
+            
+            <MudStack Spacing="3">
+                <div>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 8px;">
+                        <MudText Typo="Typo.body1" Style="color: #1F2937; font-weight: 500;">Time-based Risk</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">@safetyMetrics.RiskFactors.TimeRiskDescription</MudText>
+                            <MudChip T="string" Size="Size.Small" Style="@GetRiskLevelStyle(safetyMetrics.RiskFactors.TimeRisk)">
+                                @safetyMetrics.RiskFactors.TimeRisk.ToString()
+                            </MudChip>
+                        </MudStack>
+                    </MudStack>
+                    <MudProgressLinear Value="@safetyMetrics.RiskFactors.TimeRiskPercentage" Color="Color.Default" Style="height: 12px; border-radius: 6px; background-color: #E5E7EB;" />
+                </div>
+
+                <div>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 8px;">
+                        <MudText Typo="Typo.body1" Style="color: #1F2937; font-weight: 500;">Location Risk</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">@safetyMetrics.RiskFactors.LocationRiskDescription</MudText>
+                            <MudChip T="string" Size="Size.Small" Style="@GetRiskLevelStyle(safetyMetrics.RiskFactors.LocationRisk)">
+                                @safetyMetrics.RiskFactors.LocationRisk.ToString()
+                            </MudChip>
+                        </MudStack>
+                    </MudStack>
+                    <MudProgressLinear Value="@safetyMetrics.RiskFactors.LocationRiskPercentage" Color="Color.Default" Style="height: 12px; border-radius: 6px; background-color: #E5E7EB;" />
+                </div>
+
+                <div>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 8px;">
+                        <MudText Typo="Typo.body1" Style="color: #1F2937; font-weight: 500;">Traffic Risk</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">@safetyMetrics.RiskFactors.TrafficRiskDescription</MudText>
+                            <MudChip T="string" Size="Size.Small" Style="@GetRiskLevelStyle(safetyMetrics.RiskFactors.TrafficRisk)">
+                                @safetyMetrics.RiskFactors.TrafficRisk.ToString()
+                            </MudChip>
+                        </MudStack>
+                    </MudStack>
+                    <MudProgressLinear Value="@safetyMetrics.RiskFactors.TrafficRiskPercentage" Color="Color.Default" Style="height: 12px; border-radius: 6px; background-color: #E5E7EB;" />
+                </div>
+
+                <div>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 8px;">
+                        <MudText Typo="Typo.body1" Style="color: #1F2937; font-weight: 500;">Weather Risk</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">@safetyMetrics.RiskFactors.WeatherRiskDescription</MudText>
+                            <MudChip T="string" Size="Size.Small" Style="@GetRiskLevelStyle(safetyMetrics.RiskFactors.WeatherRisk)">
+                                @safetyMetrics.RiskFactors.WeatherRisk.ToString()
+                            </MudChip>
+                        </MudStack>
+                    </MudStack>
+                    <MudProgressLinear Value="@safetyMetrics.RiskFactors.WeatherRiskPercentage" Color="Color.Default" Style="height: 12px; border-radius: 6px; background-color: #E5E7EB;" />
+                </div>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    @* Incident History Table *@
+    <MudPaper Elevation="1" Style="border-radius: 12px; border: 1px solid #E5E7EB; overflow: hidden;">
+        <div style="padding: 24px;">
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1F2937; margin-bottom: 16px;">Recent Incidents</MudText>
+        </div>
+        
+        @if (incidents.Any())
+        {
+            <MudTable Items="@incidents" Hover="true" Breakpoint="Breakpoint.Sm" Style="background-color: white;">
+                <HeaderContent>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Date</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Driver</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Type</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Severity</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Status</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date">
+                        <MudText Typo="Typo.body2" Style="color: #6B7280;">@context.Date.ToString("MMM dd, yyyy")</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Driver">
+                        <MudText Typo="Typo.body2" Style="color: #1F2937; font-weight: 500;">@context.DriverName</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Type">
+                        <MudText Typo="Typo.body2" Style="color: #6B7280;">@context.Type</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Severity">
+                        <MudChip T="string" Size="Size.Small" Style="@GetSeverityChipStyle(context.Severity)">
+                            @context.Severity.ToString().ToUpper()
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Size="Size.Small" Style="@GetStatusChipStyle(context.Status)">
+                            @context.Status.ToString()
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Style="color: #1F2937;" OnClick="() => ViewIncident(context.Id)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <div style="padding: 48px;">
+                <EmptyState Icon="@Icons.Material.Filled.CheckCircle"
+                           Title="No incidents recorded"
+                           Description="Great! No safety incidents to report" />
+            </div>
+        }
+    </MudPaper>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool isSyncing = false;
+    private DateTime? lastUpdateTime;
+    private string dateFilter = "ThisWeek";
+    private string severityFilter = "All";
+    private SafetyMetrics safetyMetrics = new();
+    private List<Alert> activeAlerts = new();
+    private List<Alert> filteredAlerts = new();
+    private List<Incident> incidents = new();
+    private System.Threading.Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSafetyData();
+
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await RefreshData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadSafetyData()
+    {
+        try
+        {
+            isLoading = true;
+            safetyMetrics = await SafetyService.GetSafetyMetricsAsync(dateFilter);
+            activeAlerts = await AlertService.GetActiveAlertsAsync();
+            incidents = await SafetyService.GetIncidentHistoryAsync(new Dictionary<string, string>());
+            FilterAlerts(severityFilter);
+            lastUpdateTime = DateTime.Now;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        isSyncing = true;
+        await LoadSafetyData();
+        isSyncing = false;
+    }
+
+    private void FilterAlerts(string severity)
+    {
+        severityFilter = severity;
+        
+        if (severity == "All")
+        {
+            filteredAlerts = activeAlerts;
+        }
+        else
+        {
+            var severityEnum = Enum.Parse<AlertSeverity>(severity);
+            filteredAlerts = activeAlerts.Where(a => a.Severity == severityEnum).ToList();
+        }
+    }
+
+    private async Task DismissAlert(string alertId)
+    {
+        await AlertService.DismissAlertAsync(alertId);
+        await LoadSafetyData();
+    }
+
+    private async Task ResolveAlert(string alertId)
+    {
+        await AlertService.ResolveAlertAsync(alertId);
+        await LoadSafetyData();
+    }
+
+    private void DismissInsight(string insightId)
+    {
+        var insight = safetyMetrics.Insights.FirstOrDefault(i => i.Id == insightId);
+        if (insight != null)
+        {
+            insight.IsDismissed = true;
+        }
+    }
+
+    private void ViewIncident(string incidentId)
+    {
+        // TODO: Open incident details modal
+    }
+
+    private async Task ExportReport()
+    {
+        await Task.Delay(100);
+        // TODO: Export safety report
+    }
+
+    private string GetMetricCardStyle()
+    {
+        return "padding: 20px; border-radius: 12px; border: 1px solid #E5E7EB; background-color: white;";
+    }
+
+    private string GetFilterChipStyle(bool isSelected)
+    {
+        return isSelected 
+            ? "background-color: #1F2937; color: white;"
+            : "background-color: white; color: #1F2937; border: 1px solid #E5E7EB;";
+    }
+
+    private string GetInsightCardStyle()
+    {
+        return "padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB; background-color: #FAFAFA;";
+    }
+
+    private string GetInsightIcon(InsightType type)
+    {
+        return type switch
+        {
+            InsightType.Warning => Icons.Material.Filled.Warning,
+            InsightType.Information => Icons.Material.Filled.Info,
+            InsightType.Recommendation => Icons.Material.Filled.Lightbulb,
+            InsightType.Alert => Icons.Material.Filled.Error,
+            _ => Icons.Material.Filled.Info
+        };
+    }
+
+    private string GetRiskLevelStyle(RiskLevel level)
+    {
+        return level switch
+        {
+            RiskLevel.Low => "background-color: #F5F5F5; color: #1F2937;",
+            RiskLevel.Medium => "background-color: #6B7280; color: white;",
+            RiskLevel.High => "background-color: #374151; color: white;",
+            RiskLevel.Critical => "background-color: #1F2937; color: white;",
+            _ => "background-color: #F5F5F5; color: #1F2937;"
+        };
+    }
+
+    private string GetSeverityChipStyle(AlertSeverity severity)
+    {
+        return severity switch
+        {
+            AlertSeverity.Critical => "background-color: #1F2937; color: white;",
+            AlertSeverity.High => "background-color: #374151; color: white;",
+            AlertSeverity.Medium => "background-color: #6B7280; color: white;",
+            _ => "background-color: #F5F5F5; color: #1F2937;"
+        };
+    }
+
+    private string GetStatusChipStyle(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.Resolved or IncidentStatus.Closed => "background-color: #F5F5F5; color: #1F2937;",
+            _ => "background-color: white; color: #1F2937; border: 1px solid #E5E7EB;"
+        };
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+}
+
+<style>
+    .mud-progress-linear-bar {
+        background-color: #1F2937 !important;
+    }
+</style>

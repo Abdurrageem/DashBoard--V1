@@ -1,0 +1,428 @@
+@page "/routes"
+@rendermode InteractiveServer
+@inject IRouteService RouteService
+@inject IDriverService DriverService
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<PageTitle>Route Management - SafeRoute Operations</PageTitle>
+
+<PageHeader Title="Route Management"
+            Subtitle="Optimize and track delivery routes"
+            LastUpdateTime="@lastUpdateTime"
+            IsSyncing="@isSyncing"
+            OnRefresh="RefreshData">
+    <ActionButtons>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.FileDownload"
+                   Style="color: #1F2937; border-color: #1F2937; margin-right: 8px;"
+                   OnClick="ExportRoutes">
+            Export Routes
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Style="background-color: #1F2937; color: white;"
+                   OnClick="CreateNewRoute">
+            Create New Route
+        </MudButton>
+    </ActionButtons>
+</PageHeader>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+        <MudProgressCircular Color="Color.Default" Size="Size.Large" Indeterminate="true" Style="color: #1F2937;" />
+        <MudText Typo="Typo.h6" Style="color: #6B7280;">Loading routes...</MudText>
+    </MudStack>
+}
+else
+{
+    @* Summary Cards *@
+    <MudGrid Spacing="3" Style="margin-bottom: 32px;">
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@routes.Count.ToString()"
+                        Label="Total Routes Today"
+                        Icon="@Icons.Material.Filled.Route"
+                        IconBackgroundColor="#F5F5F5" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@routes.Count(r => r.Status == RouteStatus.InProgress).ToString()"
+                        Label="In Progress"
+                        Icon="@Icons.Material.Filled.DirectionsCar"
+                        IconBackgroundColor="#F0FDF4" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@routes.Count(r => r.Status == RouteStatus.Completed).ToString()"
+                        Label="Completed"
+                        Icon="@Icons.Material.Filled.CheckCircle"
+                        IconBackgroundColor="#F5F5F5" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <SummaryCard Value="@routes.Count(r => r.Status == RouteStatus.Pending).ToString()"
+                        Label="Pending"
+                        Icon="@Icons.Material.Filled.Schedule"
+                        IconBackgroundColor="#FFFBEB" />
+        </MudItem>
+    </MudGrid>
+
+    @* Filter Bar *@
+    <MudPaper Elevation="1" Style="padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #E5E7EB;">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Spacing="2">
+            <MudTextField @bind-Value="searchQuery"
+                         Placeholder="Search routes by ID, driver, or location..."
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Search"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Style="max-width: 400px; background-color: white;"
+                         OnKeyUp="ApplyFilters" />
+
+            <MudStack Row="true" Spacing="2">
+                <MudSelect @bind-Value="statusFilter"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Label="Status"
+                          Style="min-width: 150px;">
+                    <MudSelectItem Value="@("All")">All</MudSelectItem>
+                    <MudSelectItem Value="@("InProgress")">In Progress</MudSelectItem>
+                    <MudSelectItem Value="@("Completed")">Completed</MudSelectItem>
+                    <MudSelectItem Value="@("Pending")">Pending</MudSelectItem>
+                </MudSelect>
+
+                <MudSelect @bind-Value="dateFilter"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Label="Date"
+                          Style="min-width: 150px;">
+                    <MudSelectItem Value="@("Today")">Today</MudSelectItem>
+                    <MudSelectItem Value="@("Yesterday")">Yesterday</MudSelectItem>
+                    <MudSelectItem Value="@("ThisWeek")">This Week</MudSelectItem>
+                    <MudSelectItem Value="@("ThisMonth")">This Month</MudSelectItem>
+                </MudSelect>
+
+                <MudSelect @bind-Value="sortBy"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Label="Sort by"
+                          Style="min-width: 150px;">
+                    <MudSelectItem Value="@("RouteID")">Route ID</MudSelectItem>
+                    <MudSelectItem Value="@("Driver")">Driver</MudSelectItem>
+                    <MudSelectItem Value="@("Status")">Status</MudSelectItem>
+                    <MudSelectItem Value="@("Progress")">Progress</MudSelectItem>
+                </MudSelect>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    @* Routes Table *@
+    @if (filteredRoutes.Any())
+    {
+        <MudPaper Elevation="1" Style="border-radius: 12px; border: 1px solid #E5E7EB; overflow: hidden;">
+            <MudTable Items="@filteredRoutes"
+                     Hover="true"
+                     Breakpoint="Breakpoint.Sm"
+                     Style="background-color: white;">
+                <HeaderContent>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Route ID</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Driver</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Status</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Stops</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Distance</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Est. Time</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Progress</MudTh>
+                    <MudTh Style="color: #1F2937; font-weight: 600;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Route ID">
+                        <MudLink Href="#" Style="color: #1F2937; font-weight: 600; text-decoration: underline;" OnClick="() => ViewRouteDetails(context.Id)">
+                            @context.Id
+                        </MudLink>
+                    </MudTd>
+                    <MudTd DataLabel="Driver">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudAvatar Size="Size.Small" Color="Color.Default" Style="background-color: #F5F5F5; color: #1F2937;">
+                                @GetDriverInitials(context.DriverId)
+                            </MudAvatar>
+                            <MudText Typo="Typo.body2" Style="color: #1F2937;">
+                                @GetDriverName(context.DriverId)
+                            </MudText>
+                        </MudStack>
+                    </MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Size="Size.Small" Style="@GetStatusChipStyle(context.Status)">
+                            @context.Status.ToString()
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Stops">
+                        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                            @context.Stops.Count stops
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Distance">
+                        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                            @context.EstimatedDistance.ToString("F1") km
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Est. Time">
+                        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                            @FormatTimeSpan(context.EstimatedTime)
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Progress">
+                        @if (context.Status == RouteStatus.InProgress)
+                        {
+                            var progress = GetRouteProgress(context);
+                            <MudStack Spacing="0">
+                                <MudProgressLinear Value="@progress" Color="Color.Default" Style="height: 8px; border-radius: 4px; background-color: #E5E7EB;">
+                                    <MudText Typo="Typo.caption" Style="color: #1F2937; font-weight: 600; position: absolute; right: 0;">
+                                        @progress%
+                                    </MudText>
+                                </MudProgressLinear>
+                            </MudStack>
+                        }
+                        else if (context.Status == RouteStatus.Completed)
+                        {
+                            <MudText Typo="Typo.body2" Style="color: #1F2937; font-weight: 600;">100%</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">—</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudStack Row="true" Spacing="0">
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                          Size="Size.Small"
+                                          Style="color: #1F2937;"
+                                          OnClick="() => ViewRouteDetails(context.Id)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Timeline"
+                                          Size="Size.Small"
+                                          Style="color: #1F2937;"
+                                          OnClick="() => OptimizeRoute(context.Id)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                          Size="Size.Small"
+                                          Style="color: #1F2937;"
+                                          OnClick="() => EditRoute(context.Id)" />
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
+    else
+    {
+        <EmptyState Icon="@Icons.Material.Filled.Route"
+                   Title="No routes found"
+                   Description="@GetEmptyStateMessage()">
+            <ActionButton>
+                <MudButton Variant="Variant.Filled"
+                          StartIcon="@Icons.Material.Filled.Add"
+                          Style="background-color: #1F2937; color: white;"
+                          OnClick="CreateNewRoute">
+                    Create First Route
+                </MudButton>
+            </ActionButton>
+        </EmptyState>
+    }
+}
+
+@code {
+    // MOBILE APP INTEGRATION:
+    // Mobile driver app receives assigned routes and sends real-time updates
+    // API Endpoints:
+    // - GET /api/routes - Fetch all routes
+    // - GET /api/routes/driver/{driverId} - Mobile app fetches assigned routes
+    // - PUT /api/routes/{routeId}/stop/{stopIndex}/status - Mobile app updates stop status
+    // - POST /api/routes/{routeId}/stop/{stopIndex}/complete - Mobile app marks stop complete with photo/signature
+    // - PUT /api/routes/{routeId}/progress - Mobile app sends progress updates
+    // - POST /api/routes/{routeId}/optimize - Request route optimization
+
+    private bool isLoading = true;
+    private bool isSyncing = false;
+    private DateTime? lastUpdateTime;
+    private List<Models.Route> routes = new();
+    private List<Models.Route> filteredRoutes = new();
+    private List<Driver> drivers = new();
+    private string searchQuery = "";
+    private string statusFilter = "All";
+    private string dateFilter = "Today";
+    private string sortBy = "RouteID";
+    private System.Threading.Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRouteData();
+
+        // Check for driver query parameter
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var driverId = query.Get("driver");
+        if (!string.IsNullOrEmpty(driverId))
+        {
+            searchQuery = driverId;
+            ApplyFilters();
+        }
+
+        // Auto-refresh every 30 seconds
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await RefreshData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadRouteData()
+    {
+        try
+        {
+            isLoading = true;
+
+            // MOBILE APP INTEGRATION POINT
+            // Fetch routes that are synced from mobile driver apps
+            routes = await RouteService.GetActiveRoutesAsync();
+            drivers = await DriverService.GetActiveDriversAsync();
+
+            ApplyFilters();
+            lastUpdateTime = DateTime.Now;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        isSyncing = true;
+        await LoadRouteData();
+        isSyncing = false;
+    }
+
+    private void ApplyFilters()
+    {
+        var query = routes.AsEnumerable();
+
+        // Apply status filter
+        if (statusFilter != "All")
+        {
+            var status = Enum.Parse<RouteStatus>(statusFilter);
+            query = query.Where(r => r.Status == status);
+        }
+
+        // Apply search
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            query = query.Where(r =>
+                r.Id.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                r.DriverId.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                GetDriverName(r.DriverId).Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply sort
+        query = sortBy switch
+        {
+            "Driver" => query.OrderBy(r => GetDriverName(r.DriverId)),
+            "Status" => query.OrderBy(r => r.Status),
+            "Progress" => query.OrderByDescending(r => GetRouteProgress(r)),
+            _ => query.OrderBy(r => r.Id)
+        };
+
+        filteredRoutes = query.ToList();
+    }
+
+    private string GetDriverName(string driverId)
+    {
+        return drivers.FirstOrDefault(d => d.Id == driverId)?.Name ?? "Unknown";
+    }
+
+    private string GetDriverInitials(string driverId)
+    {
+        var name = GetDriverName(driverId);
+        if (name == "Unknown") return "?";
+        var names = name.Split(' ');
+        return names.Length > 1 ? $"{names[0][0]}{names[1][0]}" : $"{names[0][0]}";
+    }
+
+    private int GetRouteProgress(Models.Route route)
+    {
+        if (route.Stops.Count == 0) return 0;
+        var completed = route.Stops.Count(s => s.Status == StopStatus.Completed);
+        return (completed * 100) / route.Stops.Count;
+    }
+
+    private string GetStatusChipStyle(RouteStatus status)
+    {
+        return status switch
+        {
+            RouteStatus.InProgress => "background-color: #1F2937; color: white;",
+            RouteStatus.Completed => "background-color: #F5F5F5; color: #1F2937; border: 1px solid #E5E7EB;",
+            RouteStatus.Pending => "background-color: white; color: #1F2937; border: 1px solid #E5E7EB;",
+            _ => "background-color: #F5F5F5; color: #6B7280;"
+        };
+    }
+
+    private string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        var hours = (int)timeSpan.TotalHours;
+        var minutes = timeSpan.Minutes;
+        return $"{hours}h {minutes}m";
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            return $"No routes match your search for \"{searchQuery}\"";
+        }
+        if (statusFilter != "All")
+        {
+            return $"No routes with status: {statusFilter}";
+        }
+        return "Create your first route to start tracking deliveries";
+    }
+
+    private void ViewRouteDetails(string routeId)
+    {
+        // TODO: Open route details modal with map and stop list
+    }
+
+    private async Task OptimizeRoute(string routeId)
+    {
+        // TODO: Call route optimization service
+        await Task.Delay(100);
+    }
+
+    private void EditRoute(string routeId)
+    {
+        // TODO: Open edit route modal
+    }
+
+    private void CreateNewRoute()
+    {
+        // TODO: Open create route modal
+    }
+
+    private async Task ExportRoutes()
+    {
+        // TODO: Export routes to Excel/PDF
+        await Task.Delay(100);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        refreshTimer?.Dispose();
+    }
+}
+
+<style>
+    .mud-table-cell {
+        color: #1F2937;
+    }
+
+    .mud-progress-linear-bar {
+        background-color: #1F2937 !important;
+    }
+</style>

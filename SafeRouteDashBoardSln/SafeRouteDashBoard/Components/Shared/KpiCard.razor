@@ -1,0 +1,96 @@
+@* KPI Card Component with trends and hover effects *@
+
+<MudPaper Class="kpi-card" Elevation="2" Style="@GetCardStyle()">
+    <MudStack Spacing="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <div>
+                <MudText Typo="Typo.caption" Style="color: #6B7280; font-weight: 500;">@Title</MudText>
+                <MudText Typo="Typo.h4" Style="font-weight: 700; margin-top: 8px;">@Value</MudText>
+                @if (!string.IsNullOrEmpty(Subtitle))
+                {
+                    <MudText Typo="Typo.body2" Style="color: #6B7280; margin-top: 4px;">@Subtitle</MudText>
+                }
+            </div>
+            <MudIcon Icon="@Icon" Style="@GetIconStyle()" Size="Size.Large" />
+        </MudStack>
+
+        @if (TrendData != null && TrendData.Any())
+        {
+            <div class="trend-sparkline" style="height: 30px; margin-top: 8px;">
+                @* Simplified sparkline visualization *@
+                <div style="display: flex; align-items: flex-end; height: 100%; gap: 2px;">
+                    @foreach (var value in TrendData)
+                    {
+                        var height = (value / TrendData.Max()) * 100;
+                        <div style="flex: 1; background-color: @IconColor; opacity: 0.6; height: @(height)%; border-radius: 2px;"></div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (ShowChange && ChangePercentage != 0)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@GetTrendIcon()" Size="Size.Small" Style="@GetTrendColor()" />
+                <MudText Typo="Typo.caption" Style="@GetTrendColor()">
+                    @Math.Abs(ChangePercentage).ToString("F1")% @ChangeLabel
+                </MudText>
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Dashboard;
+    [Parameter] public string IconColor { get; set; } = "#3B82F6";
+    [Parameter] public double ChangePercentage { get; set; }
+    [Parameter] public string ChangeLabel { get; set; } = "from yesterday";
+    [Parameter] public bool ShowChange { get; set; } = true;
+    [Parameter] public List<double>? TrendData { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private bool isHovered = false;
+
+    private string GetCardStyle()
+    {
+        var baseStyle = "padding: 20px; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;";
+        if (isHovered)
+        {
+            return baseStyle + " box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px);";
+        }
+        return baseStyle + " box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
+    }
+
+    private string GetIconStyle()
+    {
+        return $"color: {IconColor}; background-color: {IconColor}15; padding: 12px; border-radius: 8px;";
+    }
+
+    private string GetTrendIcon()
+    {
+        return ChangePercentage >= 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown;
+    }
+
+    private string GetTrendColor()
+    {
+        return ChangePercentage >= 0 ? "color: #10B981; font-weight: 600;" : "color: #EF4444; font-weight: 600;";
+    }
+
+    private async Task HandleClick()
+    {
+        if (OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+}
+
+<style>
+    .kpi-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: translateY(-2px);
+    }
+</style>

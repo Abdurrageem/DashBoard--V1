@@ -1,0 +1,166 @@
+@* Alert Card Component for displaying alerts *@
+
+<MudPaper Class="alert-card" Elevation="1" Style="@GetCardStyle()">
+    <MudStack Spacing="2">
+        @* Header with Icon and Severity Badge *@
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+                <MudIcon Icon="@GetAlertIcon()" Style="@GetIconStyle()" />
+                <div style="flex: 1;">
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; margin-bottom: 4px;">
+                        @Alert.Title
+                    </MudText>
+                    <MudStack Row="true" Spacing="1" Style="margin-bottom: 8px;">
+                        <MudChip T="string" Size="Size.Small" Color="@GetSeverityColor()" Style="font-weight: 500; padding: 4px 12px;">
+                            @Alert.Severity.ToString().ToUpper()
+                        </MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="font-weight: 500; padding: 4px 12px;">
+                            @Alert.Category.ToString().ToUpper()
+                        </MudChip>
+                    </MudStack>
+                </div>
+            </MudStack>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="DismissAlert" />
+        </MudStack>
+
+        @* Message *@
+        @if (!string.IsNullOrEmpty(Alert.Message))
+        {
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                @Alert.Message
+            </MudText>
+        }
+
+        @* Driver Link *@
+        @if (!string.IsNullOrEmpty(Alert.DriverId))
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Style="color: #6B7280;" />
+                <MudLink Typo="Typo.body2" Href="@($"/drivers/{Alert.DriverId}")" Style="color: #3B82F6; font-weight: 500;">
+                    @Alert.DriverId
+                </MudLink>
+            </MudStack>
+        }
+
+        @* Location *@
+        @if (Alert.Location != null && !string.IsNullOrEmpty(Alert.Location.Address))
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Style="color: #6B7280;" />
+                <MudText Typo="Typo.body2" Style="color: #1F2937;">
+                    @Alert.Location.Address
+                </MudText>
+            </MudStack>
+        }
+
+        @* Footer with Timestamp and Actions *@
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-top: 8px;">
+            <MudText Typo="Typo.caption" Style="color: #6B7280;">
+                @Alert.GetRelativeTime()
+            </MudText>
+            @if (Alert.Status == AlertStatus.Active)
+            {
+                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Success" OnClick="ResolveAlert">
+                    Mark as Resolved
+                </MudButton>
+            }
+        </MudStack>
+
+        @* Expandable Details *@
+        @if (ShowDetails)
+        {
+            <MudDivider />
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.caption" Style="font-weight: 600; color: #1F2937;">DETAILS</MudText>
+                @if (!string.IsNullOrEmpty(Alert.VehicleId))
+                {
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">Vehicle: @Alert.VehicleId</MudText>
+                }
+                @if (!string.IsNullOrEmpty(Alert.RouteId))
+                {
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">Route: @Alert.RouteId</MudText>
+                }
+                @if (!string.IsNullOrEmpty(Alert.AssignedTo))
+                {
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">Assigned to: @Alert.AssignedTo</MudText>
+                }
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public Alert Alert { get; set; } = new();
+    [Parameter] public bool ShowDetails { get; set; } = false;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+    [Parameter] public EventCallback OnResolve { get; set; }
+
+    private string GetCardStyle()
+    {
+        var borderColor = Alert.Severity switch
+        {
+            AlertSeverity.Critical => "#EF4444",
+            AlertSeverity.High => "#F59E0B",
+            AlertSeverity.Medium => "#F59E0B",
+            _ => "#3B82F6"
+        };
+
+        return $"padding: 16px; border-radius: 12px; border-left: 4px solid {borderColor}; transition: all 0.3s ease;";
+    }
+
+    private string GetAlertIcon()
+    {
+        return Alert.Severity switch
+        {
+            AlertSeverity.Critical => Icons.Material.Filled.Cancel,
+            AlertSeverity.High or AlertSeverity.Medium => Icons.Material.Filled.Warning,
+            _ => Icons.Material.Filled.Info
+        };
+    }
+
+    private string GetIconStyle()
+    {
+        var color = Alert.Severity switch
+        {
+            AlertSeverity.Critical => "#EF4444",
+            AlertSeverity.High => "#F59E0B",
+            AlertSeverity.Medium => "#F59E0B",
+            _ => "#3B82F6"
+        };
+
+        return $"color: {color};";
+    }
+
+    private Color GetSeverityColor()
+    {
+        return Alert.Severity switch
+        {
+            AlertSeverity.Critical => Color.Error,
+            AlertSeverity.High => Color.Warning,
+            AlertSeverity.Medium => Color.Warning,
+            _ => Color.Info
+        };
+    }
+
+    private async Task DismissAlert()
+    {
+        if (OnDismiss.HasDelegate)
+        {
+            await OnDismiss.InvokeAsync();
+        }
+    }
+
+    private async Task ResolveAlert()
+    {
+        if (OnResolve.HasDelegate)
+        {
+            await OnResolve.InvokeAsync();
+        }
+    }
+}
+
+<style>
+    .alert-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+</style>

@@ -1,0 +1,185 @@
+@* Driver Card Component showing driver information *@
+
+<MudPaper Class="driver-card" Elevation="1" Style="@GetCardStyle()">
+    <MudStack Spacing="2">
+        @* Header with Avatar, Name, and Status *@
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudBadge Origin="Origin.BottomRight" Overlap="true" Color="@GetStatusBadgeColor()" Dot="true" Bordered="true">
+                    <MudAvatar Color="Color.Primary" Size="Size.Large">
+                        @GetInitials()
+                    </MudAvatar>
+                </MudBadge>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">@Driver.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #6B7280;">@Driver.Id</MudText>
+                </div>
+            </MudStack>
+            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor()" Style="font-weight: 500;">
+                @Driver.Status.ToString()
+            </MudChip>
+        </MudStack>
+
+        @* Location *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Style="color: #6B7280;" />
+            <MudText Typo="Typo.body2" Style="color: #1F2937;">@Driver.CurrentLocation?.Address</MudText>
+        </MudStack>
+
+        @* Contact Info *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Style="color: #6B7280;" />
+            <MudText Typo="Typo.body2" Style="color: #1F2937;">@Driver.Phone</MudText>
+        </MudStack>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Style="color: #6B7280;" />
+            <MudText Typo="Typo.body2" Style="color: #1F2937;">@Driver.Email</MudText>
+        </MudStack>
+
+        @* Metrics Row *@
+        <MudGrid Spacing="2" Style="margin-top: 8px;">
+            <MudItem xs="4">
+                <MudStack AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@Driver.DeliveryCount</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Deliveries</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="4">
+                <MudStack AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@Driver.Distance.ToString("F1")</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #6B7280;">km</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="4">
+                <MudStack AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@Driver.OnDutyHours.ToString("F1")</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #6B7280;">h</MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        @* Route Info *@
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-top: 8px;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Style="color: #10B981;" />
+                <MudText Typo="Typo.body2" Style="color: #1F2937; font-weight: 500;">@Driver.RouteId</MudText>
+            </MudStack>
+            <MudChip T="string" Size="Size.Small" Color="@GetRiskColor()" Style="font-weight: 500;">
+                Risk: @Driver.RiskScore
+            </MudChip>
+        </MudStack>
+
+        @* Progress Bar *@
+        @if (Driver.Status == DriverStatus.Active)
+        {
+            <div>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" Style="margin-bottom: 4px;">
+                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Progress</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #1F2937; font-weight: 600;">@Driver.Progress%</MudText>
+                </MudStack>
+                <MudProgressLinear Color="Color.Primary" Value="@Driver.Progress" Style="height: 8px; border-radius: 4px;" />
+            </div>
+
+            @* ETA *@
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top: 4px;">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" Style="color: #6B7280;" />
+                <MudText Typo="Typo.body2" Style="color: #1F2937;">
+                    ETA: @Driver.ETA - @Driver.Destination
+                </MudText>
+            </MudStack>
+        }
+
+        @* Action Buttons (shown on hover or in expanded view) *@
+        @if (ShowActions)
+        {
+            <MudStack Row="true" Spacing="1" Style="margin-top: 8px;">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" FullWidth="true" OnClick="ViewDetails">
+                    View Details
+                </MudButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Color="Color.Primary" OnClick="ContactDriver" />
+                <MudIconButton Icon="@Icons.Material.Filled.Map" Size="Size.Small" Color="Color.Primary" OnClick="ViewRoute" />
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public Driver Driver { get; set; } = new();
+    [Parameter] public bool ShowActions { get; set; } = false;
+    [Parameter] public EventCallback OnViewDetails { get; set; }
+    [Parameter] public EventCallback OnContact { get; set; }
+    [Parameter] public EventCallback OnViewRoute { get; set; }
+
+    private string GetCardStyle()
+    {
+        return "padding: 16px; border-radius: 12px; transition: all 0.3s ease;";
+    }
+
+    private string GetInitials()
+    {
+        if (string.IsNullOrEmpty(Driver.Name)) return "??";
+        var names = Driver.Name.Split(' ');
+        return names.Length > 1 ? $"{names[0][0]}{names[1][0]}" : $"{names[0][0]}";
+    }
+
+    private Color GetStatusBadgeColor()
+    {
+        return Driver.Status switch
+        {
+            DriverStatus.Active => Color.Success,
+            DriverStatus.OnBreak => Color.Warning,
+            DriverStatus.Emergency => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetStatusColor()
+    {
+        return Driver.Status switch
+        {
+            DriverStatus.Active => Color.Success,
+            DriverStatus.OnBreak => Color.Warning,
+            DriverStatus.Emergency => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetRiskColor()
+    {
+        if (Driver.RiskScore < 70) return Color.Success;
+        if (Driver.RiskScore < 85) return Color.Warning;
+        return Color.Error;
+    }
+
+    private async Task ViewDetails()
+    {
+        if (OnViewDetails.HasDelegate)
+        {
+            await OnViewDetails.InvokeAsync();
+        }
+    }
+
+    private async Task ContactDriver()
+    {
+        if (OnContact.HasDelegate)
+        {
+            await OnContact.InvokeAsync();
+        }
+    }
+
+    private async Task ViewRoute()
+    {
+        if (OnViewRoute.HasDelegate)
+        {
+            await OnViewRoute.InvokeAsync();
+        }
+    }
+}
+
+<style>
+    .driver-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: translateY(-2px);
+    }
+</style>
