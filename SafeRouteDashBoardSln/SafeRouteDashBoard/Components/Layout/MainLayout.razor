@@ -1,17 +1,21 @@
 ﻿@inherits LayoutComponentBase
 @inject INotificationService NotificationService
 
+<MudThemeProvider Theme="@customTheme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <MudLayout>
     @* App Bar / Header *@
-    <MudAppBar Elevation="1" Style="background-color: white; color: #1F2937;">
+    <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         
         @* Logo and Title *@
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="margin-right: 24px;">
-            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: #3B82F6;" Size="Size.Large" />
+            <MudIcon Icon="@Icons.Material.Filled.Shield" Color="Color.Inherit" Size="Size.Large" />
             <div>
-                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1F2937;">SafeRoute</MudText>
-                <MudText Typo="Typo.caption" Style="color: #6B7280;">Operations Dashboard</MudText>
+                <MudText Typo="Typo.h6" Style="font-weight: 700;">SafeRoute</MudText>
+                <MudText Typo="Typo.caption">Operations Dashboard</MudText>
             </div>
         </MudStack>
 
@@ -53,45 +57,45 @@
     </MudAppBar>
 
     @* Side Drawer / Navigation *@
-    <MudDrawer @bind-Open="@drawerOpen" Elevation="2" Variant="@DrawerVariant.Persistent" Style="background-color: #2D2D2D;">
-        <MudDrawerHeader Style="background-color: #2D2D2D; padding: 16px;">
-            <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;">Navigation</MudText>
+    <MudDrawer @bind-Open="@drawerOpen" Elevation="2" Variant="@DrawerVariant.Persistent">
+        <MudDrawerHeader Style="padding: 16px;">
+            <MudText Typo="Typo.h6" Style="font-weight: 600;">Navigation</MudText>
         </MudDrawerHeader>
         <MudNavMenu Style="padding: 8px;">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Primary" Style="@GetNavStyle()">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Dashboard</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Overview & metrics</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">Dashboard</MudText>
+                    <MudText Typo="Typo.caption">Overview & metrics</MudText>
                 </MudStack>
             </MudNavLink>
             <MudNavLink Href="/drivers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People" IconColor="Color.Primary" Style="@GetNavStyle()">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Drivers</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Driver management</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">Drivers</MudText>
+                    <MudText Typo="Typo.caption">Driver management</MudText>
                 </MudStack>
             </MudNavLink>
             <MudNavLink Href="/routes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Route" IconColor="Color.Primary" Style="@GetNavStyle()">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Routes</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Route optimization</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">Routes</MudText>
+                    <MudText Typo="Typo.caption">Route optimization</MudText>
                 </MudStack>
             </MudNavLink>
             <MudNavLink Href="/analytics" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Analytics" IconColor="Color.Primary" Style="@GetNavStyle()">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Analytics</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Performance data</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">Analytics</MudText>
+                    <MudText Typo="Typo.caption">Performance data</MudText>
                 </MudStack>
             </MudNavLink>
             <MudNavLink Href="/safety" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary" Style="@GetNavStyle()">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Safety Reports</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Risk & incidents</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">Safety Reports</MudText>
+                    <MudText Typo="Typo.caption">Risk & incidents</MudText>
                 </MudStack>
             </MudNavLink>
             <MudNavLink Href="/settings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Primary" Style="@GetNavStyle()">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">Settings</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">System configuration</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 500;">Settings</MudText>
+                    <MudText Typo="Typo.caption">System configuration</MudText>
                 </MudStack>
             </MudNavLink>
         </MudNavMenu>

@@ -1,0 +1,396 @@
+/* =============================================
+   SafeRoute Dashboard - Muted Rose Theme
+   Primary Color: #D58D8D (Muted Rose)
+   Secondary Color: #F5E9E9 (Light Rose)
+   ============================================= */
+
+:root {
+    /* Primary Brand Colors */
+    --mud-palette-primary: #D58D8D;
+    --mud-palette-primary-rgb: 213, 141, 141;
+    --mud-palette-primary-text: #ffffff;
+    --mud-palette-primary-hover: #C97B7B;
+    --mud-palette-primary-darken: #B86969;
+    --mud-palette-primary-lighten: #E1A7A7;
+    
+    /* Secondary Colors */
+    --mud-palette-secondary: #F5E9E9;
+    --mud-palette-secondary-rgb: 245, 233, 233;
+    --mud-palette-secondary-text: #1F2937;
+    --mud-palette-secondary-hover: #EDD9D9;
+    --mud-palette-secondary-darken: #E5C9C9;
+    
+    /* AppBar */
+    --mud-palette-appbar-background: #D58D8D;
+    --mud-palette-appbar-text: #ffffff;
+    
+    /* Background Colors */
+    --mud-palette-background: #FAFAFA;
+    --mud-palette-background-grey: #F5F5F5;
+    --mud-palette-surface: #ffffff;
+    --mud-palette-drawer-background: #ffffff;
+    
+    /* Text Colors */
+    --mud-palette-text-primary: #1F2937;
+    --mud-palette-text-secondary: #6B7280;
+    --mud-palette-text-disabled: #9CA3AF;
+    
+    /* Action Colors */
+    --mud-palette-action-default: #D58D8D;
+    --mud-palette-action-disabled: #E5E7EB;
+    --mud-palette-action-disabled-background: #F3F4F6;
+    
+    /* Divider */
+    --mud-palette-divider: #E5E7EB;
+    --mud-palette-divider-light: #F3F4F6;
+    
+    /* Table */
+    --mud-palette-table-lines: #E5E7EB;
+    --mud-palette-table-striped: #F9FAFB;
+    --mud-palette-table-hover: #F5E9E9;
+    
+    /* Lines */
+    --mud-palette-lines-default: #E5E7EB;
+    --mud-palette-lines-inputs: #D1D5DB;
+    
+    /* Success, Info, Warning, Error - using rose-tinted variations */
+    --mud-palette-success: #A8C7A8;
+    --mud-palette-info: #9DB8D8;
+    --mud-palette-warning: #E8B896;
+    --mud-palette-error: #D58D8D;
+    
+    /* Shadows - softer rose-tinted shadows */
+    --mud-elevation-1: 0 2px 4px rgba(213, 141, 141, 0.1);
+    --mud-elevation-2: 0 4px 8px rgba(213, 141, 141, 0.12);
+    --mud-elevation-3: 0 8px 16px rgba(213, 141, 141, 0.14);
+    --mud-elevation-4: 0 12px 24px rgba(213, 141, 141, 0.16);
+}
+
+/* =============================================
+   MudBlazor Component Overrides
+   ============================================= */
+
+/* Buttons */
+.mud-button-filled {
+    background-color: #D58D8D !important;
+    color: white !important;
+}
+
+.mud-button-filled:hover {
+    background-color: #C97B7B !important;
+}
+
+.mud-button-outlined {
+    border-color: #D58D8D !important;
+    color: #D58D8D !important;
+}
+
+.mud-button-outlined:hover {
+    background-color: #F5E9E9 !important;
+}
+
+.mud-button-text {
+    color: #D58D8D !important;
+}
+
+.mud-button-text:hover {
+    background-color: #F5E9E9 !important;
+}
+
+/* AppBar */
+.mud-appbar {
+    background-color: #D58D8D !important;
+    color: white !important;
+}
+
+/* Drawer */
+.mud-drawer {
+    background-color: #ffffff !important;
+    border-right: 1px solid #E5E7EB !important;
+}
+
+.mud-nav-link {
+    color: #6B7280 !important;
+}
+
+.mud-nav-link:hover {
+    background-color: #F5E9E9 !important;
+    color: #D58D8D !important;
+}
+
+.mud-nav-link-active {
+    background-color: #F5E9E9 !important;
+    color: #D58D8D !important;
+    font-weight: 600;
+}
+
+/* Cards */
+.mud-card {
+    border: 1px solid #E5E7EB !important;
+    box-shadow: 0 2px 4px rgba(213, 141, 141, 0.1) !important;
+}
+
+.mud-card-header {
+    background-color: #F5E9E9 !important;
+    color: #1F2937 !important;
+}
+
+/* Chips */
+.mud-chip {
+    background-color: #F5E9E9 !important;
+    color: #D58D8D !important;
+}
+
+.mud-chip-filled {
+    background-color: #D58D8D !important;
+    color: white !important;
+}
+
+/* Progress */
+.mud-progress-linear-bar {
+    background-color: #D58D8D !important;
+}
+
+.mud-progress-circular-circle {
+    stroke: #D58D8D !important;
+}
+
+/* Switches & Checkboxes */
+.mud-switch-checked .mud-switch-base {
+    background-color: #D58D8D !important;
+}
+
+.mud-checkbox-checked {
+    color: #D58D8D !important;
+}
+
+.mud-radio-checked {
+    color: #D58D8D !important;
+}
+
+/* Input Fields */
+.mud-input-root-filled {
+    background-color: #F5E9E9 !important;
+}
+
+.mud-input-root-outlined:hover .mud-input-outlined-border {
+    border-color: #D58D8D !important;
+}
+
+.mud-input-root-outlined.mud-input-focused .mud-input-outlined-border {
+    border-color: #D58D8D !important;
+    border-width: 2px !important;
+}
+
+.mud-input-label.mud-input-label-inputcontrol.mud-input-label-filled.mud-input-label-focused {
+    color: #D58D8D !important;
+}
+
+/* Tables */
+.mud-table-head {
+    background-color: #F5E9E9 !important;
+}
+
+.mud-table-row:hover {
+    background-color: #FAFAFA !important;
+}
+
+.mud-table-cell {
+    color: #1F2937 !important;
+}
+
+/* Tabs */
+.mud-tab-active {
+    color: #D58D8D !important;
+}
+
+.mud-tab-slider {
+    background-color: #D58D8D !important;
+}
+
+/* Select */
+.mud-select-input:focus {
+    border-color: #D58D8D !important;
+}
+
+/* Badges */
+.mud-badge-dot {
+    background-color: #D58D8D !important;
+}
+
+.mud-badge-default {
+    background-color: #D58D8D !important;
+}
+
+/* Alerts */
+.mud-alert-filled-success {
+    background-color: #A8C7A8 !important;
+}
+
+.mud-alert-filled-info {
+    background-color: #9DB8D8 !important;
+}
+
+.mud-alert-filled-warning {
+    background-color: #E8B896 !important;
+}
+
+.mud-alert-filled-error {
+    background-color: #D58D8D !important;
+}
+
+/* Pagination */
+.mud-pagination-item-selected {
+    background-color: #D58D8D !important;
+    color: white !important;
+}
+
+/* Tooltip */
+.mud-tooltip {
+    background-color: #1F2937 !important;
+}
+
+/* =============================================
+   Custom Component Styles
+   ============================================= */
+
+/* KPI Cards */
+.kpi-card {
+    background: linear-gradient(135deg, #F5E9E9 0%, #ffffff 100%);
+    border-left: 4px solid #D58D8D;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(213, 141, 141, 0.14);
+    transition: all 0.3s ease;
+}
+
+/* Alert Cards */
+.alert-card-critical {
+    border-left: 4px solid #D58D8D;
+    background-color: #FFF5F5;
+}
+
+.alert-card-high {
+    border-left: 4px solid #E8B896;
+    background-color: #FFFBEB;
+}
+
+.alert-card-medium {
+    border-left: 4px solid #9DB8D8;
+    background-color: #EFF6FF;
+}
+
+/* Driver Cards */
+.driver-card {
+    border: 1px solid #E5E7EB;
+    transition: all 0.3s ease;
+}
+
+.driver-card:hover {
+    border-color: #D58D8D;
+    box-shadow: 0 4px 12px rgba(213, 141, 141, 0.15);
+}
+
+/* Summary Cards */
+.summary-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+}
+
+.summary-card-icon {
+    background-color: #F5E9E9;
+    color: #D58D8D;
+}
+
+/* Page Headers */
+.page-header {
+    border-bottom: 2px solid #D58D8D;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+/* =============================================
+   Utility Classes
+   ============================================= */
+
+.text-primary {
+    color: #D58D8D !important;
+}
+
+.text-secondary {
+    color: #6B7280 !important;
+}
+
+.bg-primary {
+    background-color: #D58D8D !important;
+}
+
+.bg-secondary {
+    background-color: #F5E9E9 !important;
+}
+
+.border-primary {
+    border-color: #D58D8D !important;
+}
+
+.border-secondary {
+    border-color: #F5E9E9 !important;
+}
+
+/* Hover Effects */
+.hover-rose:hover {
+    background-color: #F5E9E9 !important;
+    cursor: pointer;
+}
+
+/* Gradient Backgrounds */
+.gradient-rose {
+    background: linear-gradient(135deg, #D58D8D 0%, #E1A7A7 100%);
+}
+
+.gradient-rose-light {
+    background: linear-gradient(135deg, #F5E9E9 0%, #ffffff 100%);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D58D8D;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #C97B7B;
+}
+
+/* =============================================
+   Responsive Design
+   ============================================= */
+
+@media (max-width: 960px) {
+    .mud-drawer {
+        background-color: #ffffff !important;
+    }
+}
+
+/* =============================================
+   Dark Mode Support (Future)
+   ============================================= */
+
+[data-theme="dark"] {
+    --mud-palette-primary: #E1A7A7;
+    --mud-palette-background: #1F2937;
+    --mud-palette-surface: #374151;
+    --mud-palette-text-primary: #F9FAFB;
+}

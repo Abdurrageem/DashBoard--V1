@@ -1,7 +1,9 @@
 using SafeRouteDashBoard.Components;
 using SafeRouteDashBoard.Hubs;
 using SafeRouteDashBoard.Services;
+using SafeRouteDashBoard.Data;
 using MudBlazor.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace SafeRouteDashBoard
 {
@@ -20,6 +22,10 @@ namespace SafeRouteDashBoard
 
             // Add SignalR
             builder.Services.AddSignalR();
+
+            // Add Database Context
+            builder.Services.AddDbContext<SafeRouteDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("SafeRouteDb")));
 
             // Register application services
             builder.Services.AddScoped<IDriverService, DriverService>();
