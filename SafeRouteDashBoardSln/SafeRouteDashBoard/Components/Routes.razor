@@ -8,4 +8,22 @@
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+                <MudPaper Elevation="2" Class="pa-8" Style="text-align: center;">
+                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Style="font-size: 72px; margin-bottom: 16px;" />
+                    <MudText Typo="Typo.h4" GutterBottom="true">Page Not Found</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Default" Style="margin-bottom: 24px;">
+                        Sorry, there's nothing at this address.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" StartIcon="@Icons.Material.Filled.Home">
+                        Go to Dashboard
+                    </MudButton>
+                </MudPaper>
+            </MudContainer>
+        </LayoutView>
+    </NotFound>
 </Router>
+

@@ -1,4 +1,6 @@
 using SafeRouteDashBoard.Models;
+using SafeRouteDashBoard.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace SafeRouteDashBoard.Services
 {
@@ -9,11 +11,20 @@ namespace SafeRouteDashBoard.Services
         Task<List<DriverPerformance>> GetDriverPerformanceComparisonAsync();
         Task<RevenueAnalysis> GetRevenueAnalysisAsync(string period);
         Task<byte[]> ExportReportAsync(string format, Dictionary<string, string> filters);
+        Task<DashboardKpiMetrics> GetDashboardKpiMetricsAsync();
+        Task<List<PanicAlertTrend>> GetPanicAlertTrendsAsync(int days = 7);
+        Task<List<RiskLevelDistribution>> GetRiskDistributionAsync();
     }
 
     public class AnalyticsService : IAnalyticsService
     {
+        private readonly IDbContextFactory<SafeRouteDbContext> _contextFactory;
         private readonly Random _random = new();
+
+        public AnalyticsService(IDbContextFactory<SafeRouteDbContext> contextFactory)
+        {
+            _contextFactory = contextFactory;
+        }
 
         public async Task<Analytics> GetDailyMetricsAsync(DateTime date)
         {
@@ -140,5 +151,123 @@ namespace SafeRouteDashBoard.Services
                 Timestamp = DateTime.Today.AddHours(6 + index * 2)
             }).ToList();
         }
+
+        // =============================================
+        // NEW: Real Database Analytics Methods
+        // =============================================
+
+        public async Task<DashboardKpiMetrics> GetDashboardKpiMetricsAsync()
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            
+            var activeDriversCount = await context.Drivers
+                .CountAsync(d => d.CurrentStatus == "Active");
+
+            var openPanicAlerts = await context.PanicAlerts
+                .CountAsync(pa => pa.Status == "Active");
+
+            // Safe average calculation
+            var avgSafetyScore = 0.0;
+            if (await context.SafetyScores.AnyAsync())
+            {
+                avgSafetyScore = await context.SafetyScores
+                    .AverageAsync(ss => (double)ss.OverallScore);
+            }
+
+            var highRiskZones = await context.RiskZones
+                .CountAsync(rz => rz.RiskLevel == "High" || rz.RiskLevel == "Critical");
+
+            return new DashboardKpiMetrics
+            {
+                ActiveDriversCount = activeDriversCount,
+                OpenPanicAlertsCount = openPanicAlerts,
+                AverageSafetyScore = Math.Round(avgSafetyScore, 1),
+                HighRiskZonesCount = highRiskZones
+            };
+        }
+
+        public async Task<List<PanicAlertTrend>> GetPanicAlertTrendsAsync(int days = 7)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var startDate = DateTime.Today.AddDays(-days);
+
+            var alerts = await context.PanicAlerts
+                .Where(pa => pa.CreatedAt >= startDate)
+                .GroupBy(pa => pa.CreatedAt.Date)
+                .Select(g => new PanicAlertTrend
+                {
+                    Date = g.Key,
+                    AlertCount = g.Count(),
+                    CriticalCount = g.Count(pa => pa.AlertType == "Hijack" || pa.AlertType == "Panic"),
+                    MediumCount = g.Count(pa => pa.AlertType == "Accident"),
+                    LowCount = g.Count(pa => pa.AlertType == "Medical")
+                })
+                .OrderBy(t => t.Date)
+                .ToListAsync();
+
+            // Fill missing days with zero counts
+            var allDates = Enumerable.Range(0, days)
+                .Select(i => DateTime.Today.AddDays(-days + i + 1))
+                .ToList();
+
+            var result = allDates.Select(date => 
+            {
+                var existing = alerts.FirstOrDefault(a => a.Date == date);
+                return existing ?? new PanicAlertTrend 
+                { 
+                    Date = date, 
+                    AlertCount = 0,
+                    CriticalCount = 0,
+                    MediumCount = 0,
+                    LowCount = 0
+                };
+            }).ToList();
+
+            return result;
+        }
+
+        public async Task<List<RiskLevelDistribution>> GetRiskDistributionAsync()
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var distribution = await context.RiskZones
+                .GroupBy(rz => rz.RiskLevel)
+                .Select(g => new RiskLevelDistribution
+                {
+                    RiskLevel = g.Key,
+                    ZoneCount = g.Count(),
+                    TotalIncidents = g.Sum(rz => rz.IncidentCount ?? 0)
+                })
+                .ToListAsync();
+
+            return distribution;
+        }
+    }
+
+    // =============================================
+    // Analytics DTOs
+    // =============================================
+
+    public class DashboardKpiMetrics
+    {
+        public int ActiveDriversCount { get; set; }
+        public int OpenPanicAlertsCount { get; set; }
+        public double AverageSafetyScore { get; set; }
+        public int HighRiskZonesCount { get; set; }
+    }
+
+    public class PanicAlertTrend
+    {
+        public DateTime Date { get; set; }
+        public int AlertCount { get; set; }
+        public int CriticalCount { get; set; }
+        public int MediumCount { get; set; }
+        public int LowCount { get; set; }
+    }
+
+    public class RiskLevelDistribution
+    {
+        public string RiskLevel { get; set; } = string.Empty;
+        public int ZoneCount { get; set; }
+        public int TotalIncidents { get; set; }
     }
 }

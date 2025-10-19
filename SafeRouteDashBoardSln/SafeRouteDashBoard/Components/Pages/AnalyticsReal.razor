@@ -1,0 +1,351 @@
+@page "/analytics"
+@using SafeRouteDashBoard.Services
+@using Microsoft.JSInterop
+@inject IAnalyticsService AnalyticsService
+@inject IExportService ExportService
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+<PageTitle>Analytics - SafeRoute Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+@* Page Header with Export Button *@
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <PageHeader Title="Analytics & Insights"
+                Subtitle="Real-time analytics powered by database queries" />
+        
+    <MudMenu Icon="@Icons.Material.Filled.FileDownload" 
+             Color="Color.Primary" 
+             Variant="Variant.Filled"
+             Label="Export"
+             Size="Size.Medium"
+             Disabled="@isExporting">
+        <MudMenuItem OnClick="@(() => ExportDataAsync("panic-alerts"))">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" />
+                <MudText>Panic Alerts (CSV)</MudText>
+            </MudStack>
+        </MudMenuItem>
+        <MudMenuItem OnClick="@(() => ExportDataAsync("driver-performance"))">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                <MudText>Driver Performance (CSV)</MudText>
+            </MudStack>
+        </MudMenuItem>
+        <MudMenuItem OnClick="@(() => ExportDataAsync("risk-zones"))">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Dangerous" Size="Size.Small" />
+                <MudText>Risk Zones (CSV)</MudText>
+            </MudStack>
+        </MudMenuItem>
+        <MudMenuItem OnClick="@(() => ExportDataAsync("deliveries"))">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                <MudText>Deliveries (CSV)</MudText>
+            </MudStack>
+        </MudMenuItem>
+    </MudMenu>
+</MudStack>
+
+    @* KPI Cards Section *@
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Active Drivers"
+                     Value="@GetActiveDriversValue()"
+                     Icon="@Icons.Material.Filled.DirectionsCar"
+                     Color="Color.Primary"
+                     Change="+5.2%"
+                     IsPositive="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Open Panic Alerts"
+                     Value="@GetOpenAlertsValue()"
+                     Icon="@Icons.Material.Filled.Warning"
+                     Color="Color.Error"
+                     Change="-12.3%"
+                     IsPositive="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="Avg Safety Score"
+                     Value="@GetSafetyScoreValue()"
+                     Icon="@Icons.Material.Filled.Shield"
+                     Color="Color.Success"
+                     Change="+2.8%"
+                     IsPositive="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Title="High-Risk Zones"
+                     Value="@GetRiskZonesValue()"
+                     Icon="@Icons.Material.Filled.Dangerous"
+                     Color="Color.Warning"
+                     Change="-1"
+                     IsPositive="true" />
+        </MudItem>
+    </MudGrid>
+
+    @* Charts Section *@
+    <MudGrid>
+        @* Panic Alerts Trend - Line Chart *@
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 400px;">
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600;">
+                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Small" Class="mr-2" />
+                    Panic Alerts - Last 7 Days
+                </MudText>
+                <div style="height: 320px; position: relative;">
+                    <canvas id="panicAlertsChart"></canvas>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        @* Risk Distribution - Doughnut Chart *@
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 400px;">
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600;">
+                    <MudIcon Icon="@Icons.Material.Filled.PieChart" Size="Size.Small" Class="mr-2" />
+                    Risk Distribution
+                </MudText>
+                <div style="height: 320px; position: relative;">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        @* Driver Performance - Bar Chart *@
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 400px;">
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600;">
+                    <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Small" Class="mr-2" />
+                    Driver Safety Scores
+                </MudText>
+                <div style="height: 320px; position: relative;">
+                    <canvas id="driverPerformanceChart"></canvas>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Auto-Refresh Indicator *@
+    <MudPaper Elevation="0" Class="mt-4 pa-3" Style="background-color: #EEF2FF; border-left: 4px solid #6366F1;">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" />
+                <MudText Typo="Typo.body2" Style="color: #1F2937;">
+                    Auto-refresh enabled - Data updates every 30 seconds
+                </MudText>
+            </MudStack>
+            <MudText Typo="Typo.caption" Style="color: #6B7280;">
+                Last updated: @lastUpdated.ToString("HH:mm:ss")
+            </MudText>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+private DashboardKpiMetrics? kpiMetrics;
+private List<PanicAlertTrend>? panicAlertTrends;
+private List<RiskLevelDistribution>? riskDistribution;
+private DateTime lastUpdated = DateTime.Now;
+private System.Threading.Timer? refreshTimer;
+private bool isExporting = false;
+
+private string GetActiveDriversValue() => kpiMetrics?.ActiveDriversCount.ToString() ?? "0";
+private string GetOpenAlertsValue() => kpiMetrics?.OpenPanicAlertsCount.ToString() ?? "0";
+private string GetSafetyScoreValue() => kpiMetrics?.AverageSafetyScore.ToString("F1") ?? "0.0";
+private string GetRiskZonesValue() => kpiMetrics?.HighRiskZonesCount.ToString() ?? "0";
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadDataAsync();
+
+    // Start auto-refresh timer (30 seconds)
+    refreshTimer = new System.Threading.Timer(async _ =>
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadDataAsync();
+            await RenderChartsAsync();
+            StateHasChanged();
+        });
+    }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+}
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderChartsAsync();
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        kpiMetrics = await AnalyticsService.GetDashboardKpiMetricsAsync();
+        panicAlertTrends = await AnalyticsService.GetPanicAlertTrendsAsync(7);
+        riskDistribution = await AnalyticsService.GetRiskDistributionAsync();
+        lastUpdated = DateTime.Now;
+    }
+
+    private async Task RenderChartsAsync()
+    {
+        if (panicAlertTrends != null && panicAlertTrends.Any())
+        {
+            await RenderPanicAlertsChartAsync();
+        }
+
+        if (riskDistribution != null && riskDistribution.Any())
+        {
+            await RenderRiskDistributionChartAsync();
+        }
+
+        await RenderDriverPerformanceChartAsync();
+    }
+
+    private async Task RenderPanicAlertsChartAsync()
+    {
+        var labels = panicAlertTrends!.Select(t => t.Date.ToString("dd MMM")).ToArray();
+        var criticalData = panicAlertTrends.Select(t => t.CriticalCount).ToArray();
+        var mediumData = panicAlertTrends.Select(t => t.MediumCount).ToArray();
+        var lowData = panicAlertTrends.Select(t => t.LowCount).ToArray();
+
+        var datasets = new object[]
+        {
+            new {
+                label = "Critical",
+                data = criticalData,
+                borderColor = "#EF4444",
+                backgroundColor = "rgba(239, 68, 68, 0.1)",
+                tension = 0.4,
+                fill = true
+            },
+            new {
+                label = "Medium",
+                data = mediumData,
+                borderColor = "#F59E0B",
+                backgroundColor = "rgba(245, 158, 11, 0.1)",
+                tension = 0.4,
+                fill = true
+            },
+            new {
+                label = "Low",
+                data = lowData,
+                borderColor = "#10B981",
+                backgroundColor = "rgba(16, 185, 129, 0.1)",
+                tension = 0.4,
+                fill = true
+            }
+        };
+
+        await JS.InvokeVoidAsync("chartHelpers.createLineChart", "panicAlertsChart", labels, datasets, new { });
+    }
+
+    private async Task RenderRiskDistributionChartAsync()
+    {
+        var labels = riskDistribution!.Select(r => r.RiskLevel).ToArray();
+        var data = riskDistribution.Select(r => r.TotalIncidents).ToArray();
+        var colors = new[]
+        {
+            "#EF4444", // Critical - Red
+            "#F59E0B", // High - Orange
+            "#3B82F6", // Medium - Blue
+            "#10B981"  // Low - Green
+        };
+
+        await JS.InvokeVoidAsync("chartHelpers.createDoughnutChart", "riskDistributionChart", labels, data, colors, new { });
+    }
+
+    private async Task RenderDriverPerformanceChartAsync()
+    {
+        // Mock data - in real scenario, fetch from database
+        var labels = new[] { "Emily Watson", "Michael Chen", "Sarah Johnson", "David Rodriguez", "Lisa Anderson" };
+        var data = new[] { 92, 78, 86, 95, 65 };
+
+        var datasets = new object[]
+        {
+            new {
+                label = "Safety Score",
+                data = data,
+                backgroundColor = new[]
+                {
+                    "#6366F1",
+                    "#818CF8",
+                    "#6366F1",
+                    "#818CF8",
+                    "#6366F1"
+                },
+                borderColor = "#4F46E5",
+                borderWidth = 2
+            }
+        };
+
+        await JS.InvokeVoidAsync("chartHelpers.createBarChart", "driverPerformanceChart", labels, datasets, new {
+            plugins = new {
+                legend = new { display = false }
+            },
+            scales = new {
+                y = new {
+                    beginAtZero = true,
+                    max = 100,
+                    ticks = new {
+                        callback = "(value) => value + '%'"
+                    }
+                }
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+
+    private async Task ExportDataAsync(string exportType)
+    {
+        try
+        {
+            isExporting = true;
+            StateHasChanged();
+
+            byte[] fileContent;
+            string fileName;
+
+            switch (exportType)
+            {
+                case "panic-alerts":
+                    fileContent = await ExportService.ExportPanicAlertsToCsvAsync(DateTime.Today.AddDays(-30), DateTime.Today);
+                    fileName = $"PanicAlerts_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                    break;
+                case "driver-performance":
+                    fileContent = await ExportService.ExportDriverPerformanceToCsvAsync();
+                    fileName = $"DriverPerformance_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                    break;
+                case "risk-zones":
+                    fileContent = await ExportService.ExportRiskZonesToCsvAsync();
+                    fileName = $"RiskZones_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                    break;
+                case "deliveries":
+                    fileContent = await ExportService.ExportDeliveriesToCsvAsync(DateTime.Today.AddDays(-30), DateTime.Today);
+                    fileName = $"Deliveries_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                    break;
+                default:
+                    Snackbar.Add("Invalid export type", Severity.Error);
+                    return;
+            }
+
+            // Convert to base64 for download
+            var base64 = Convert.ToBase64String(fileContent);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64);
+
+            Snackbar.Add($"Exported {fileName} successfully!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+}

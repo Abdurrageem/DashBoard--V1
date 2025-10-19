@@ -29,6 +29,12 @@ namespace SafeRouteDashBoard.Data.Entities
         [Column("acknowledged_by_dispatcher")]
         public int? AcknowledgedByDispatcher { get; set; }
 
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [Column("resolved_at")]
+        public DateTime? ResolvedAt { get; set; }
+
         // Navigation properties
         [ForeignKey(nameof(DriverId))]
         public virtual Driver Driver { get; set; } = null!;

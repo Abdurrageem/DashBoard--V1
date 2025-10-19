@@ -22,6 +22,9 @@ namespace SafeRouteDashBoard.Data.Entities
         [Column("recommendations")]
         public string? Recommendations { get; set; }
 
+        [Column("calculated_at")]
+        public DateTime CalculatedAt { get; set; }
+
         // Navigation properties
         [ForeignKey(nameof(DriverId))]
         public virtual Driver Driver { get; set; } = null!;

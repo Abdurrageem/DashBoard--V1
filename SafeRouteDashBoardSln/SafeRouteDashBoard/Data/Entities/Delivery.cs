@@ -26,6 +26,12 @@ namespace SafeRouteDashBoard.Data.Entities
         [StringLength(50)]
         public string Status { get; set; } = string.Empty;
 
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [Column("completed_at")]
+        public DateTime? CompletedAt { get; set; }
+
         // Navigation properties
         [ForeignKey(nameof(DriverId))]
         public virtual Driver Driver { get; set; } = null!;

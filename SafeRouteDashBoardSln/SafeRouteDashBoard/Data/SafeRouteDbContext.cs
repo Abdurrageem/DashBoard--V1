@@ -39,6 +39,17 @@ namespace SafeRouteDashBoard.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Ignore non-entity model classes
+            modelBuilder.Ignore<Models.Location>();
+            modelBuilder.Ignore<Models.Driver>();
+            modelBuilder.Ignore<Models.Route>();
+            modelBuilder.Ignore<Models.Alert>();
+            modelBuilder.Ignore<Models.Analytics>();
+            modelBuilder.Ignore<Models.SafetyMetrics>();
+            modelBuilder.Ignore<Models.Notification>();
+            modelBuilder.Ignore<Models.User>();
+            modelBuilder.Ignore<Models.DashboardData>();
+
             // Configure composite keys
             modelBuilder.Entity<ZoneEntry>()
                 .HasKey(ze => new { ze.DriverId, ze.GeofenceId });

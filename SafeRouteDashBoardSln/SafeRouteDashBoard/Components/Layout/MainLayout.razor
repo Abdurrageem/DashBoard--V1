@@ -165,26 +165,57 @@
 </div>
 
 @code {
-    private bool drawerOpen = true;
-    private bool notificationDrawerOpen = false;
-    private string searchQuery = "";
-    private int notificationCount = 3;
-    private int lastUpdateSeconds = 2;
-    private List<Notification> notifications = new();
-    private System.Threading.Timer? updateTimer;
+private bool drawerOpen = true;
+private bool notificationDrawerOpen = false;
+private string searchQuery = "";
+private int notificationCount = 3;
+private int lastUpdateSeconds = 2;
+private List<Notification> notifications = new();
+private System.Threading.Timer? updateTimer;
 
-    protected override async Task OnInitializedAsync()
+    // Galaxy Purple/Blue Theme
+    private MudTheme customTheme = new MudTheme()
     {
-        notifications = await NotificationService.GetNotificationsAsync("user-001");
-        notificationCount = NotificationService.GetUnreadCount("user-001");
-
-        // Start timer for last update seconds
-        updateTimer = new System.Threading.Timer(async _ =>
+        PaletteLight = new PaletteLight()
         {
-            lastUpdateSeconds = (lastUpdateSeconds + 1) % 60;
-            await InvokeAsync(StateHasChanged);
-        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-    }
+            Primary = "#6366F1",  // Galaxy Purple/Indigo
+            Secondary = "#818CF8",  // Light Galaxy Blue
+            AppbarBackground = "#6366F1",
+            AppbarText = "#ffffff",
+            Background = "#F8FAFC",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "#1F2937",
+            TextPrimary = "#1F2937",
+            TextSecondary = "#6B7280",
+            ActionDefault = "#6366F1",
+            ActionDisabled = "#E5E7EB",
+            ActionDisabledBackground = "#F3F4F6",
+            Divider = "#E5E7EB",
+            DividerLight = "#F3F4F6",
+            TableLines = "#E5E7EB",
+            LinesDefault = "#E5E7EB",
+            LinesInputs = "#D1D5DB",
+            TextDisabled = "#9CA3AF",
+            Success = "#10B981",
+            Info = "#3B82F6",
+            Warning = "#F59E0B",
+            Error = "#EF4444"
+        }
+    };
+
+protected override async Task OnInitializedAsync()
+{
+    notifications = await NotificationService.GetNotificationsAsync("user-001");
+    notificationCount = NotificationService.GetUnreadCount("user-001");
+
+    // Start timer for last update seconds
+    updateTimer = new System.Threading.Timer(async _ =>
+    {
+        lastUpdateSeconds = (lastUpdateSeconds + 1) % 60;
+        await InvokeAsync(StateHasChanged);
+    }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+}
 
     private void ToggleDrawer()
     {
@@ -223,9 +254,5 @@
 <style>
     .search-field {
         border-radius: 8px;
-    }
-
-    .mud-nav-link-active {
-        background-color: rgba(59, 130, 246, 0.1) !important;
     }
 </style>
