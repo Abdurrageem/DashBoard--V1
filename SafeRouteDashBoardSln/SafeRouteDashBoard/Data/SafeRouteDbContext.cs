@@ -73,47 +73,47 @@ namespace SafeRouteDashBoard.Data
                 .HasForeignKey(u => u.CompanyId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Driver -> User (One-to-One)
+            // Driver -> User (One-to-Many from user)
             modelBuilder.Entity<Driver>()
                 .HasOne(d => d.User)
                 .WithMany(u => u.Drivers)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); // avoid cascade chain from Users -> Drivers -> many dependents
 
-            // Dispatcher -> User (One-to-One)
+            // Dispatcher -> User (One-to-Many from user)
             modelBuilder.Entity<Dispatcher>()
                 .HasOne(d => d.User)
                 .WithMany(u => u.Dispatchers)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // LocationUpdate -> Driver (Many-to-One)
             modelBuilder.Entity<LocationUpdate>()
                 .HasOne(lu => lu.Driver)
                 .WithMany(d => d.LocationUpdates)
                 .HasForeignKey(lu => lu.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ZoneEntry -> Driver (Many-to-One)
             modelBuilder.Entity<ZoneEntry>()
                 .HasOne(ze => ze.Driver)
                 .WithMany(d => d.ZoneEntries)
                 .HasForeignKey(ze => ze.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ZoneEntry -> Geofence (Many-to-One)
             modelBuilder.Entity<ZoneEntry>()
                 .HasOne(ze => ze.Geofence)
                 .WithMany(g => g.ZoneEntries)
                 .HasForeignKey(ze => ze.GeofenceId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // PanicAlert -> Driver (Many-to-One)
             modelBuilder.Entity<PanicAlert>()
                 .HasOne(pa => pa.Driver)
                 .WithMany(d => d.PanicAlerts)
                 .HasForeignKey(pa => pa.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); // prevent multiple cascade paths
 
             // PanicAlert -> Dispatcher (Many-to-One, optional)
             modelBuilder.Entity<PanicAlert>()
@@ -127,14 +127,14 @@ namespace SafeRouteDashBoard.Data
                 .HasOne(i => i.Driver)
                 .WithMany(d => d.Incidents)
                 .HasForeignKey(i => i.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // IncidentResponse -> Incident (Many-to-One)
             modelBuilder.Entity<IncidentResponse>()
                 .HasOne(ir => ir.Incident)
                 .WithMany(i => i.Responses)
                 .HasForeignKey(ir => ir.IncidentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // IncidentResponse -> Dispatcher (Many-to-One)
             modelBuilder.Entity<IncidentResponse>()
@@ -148,7 +148,7 @@ namespace SafeRouteDashBoard.Data
                 .HasOne(cr => cr.Incident)
                 .WithMany(i => i.CameraRecordings)
                 .HasForeignKey(cr => cr.IncidentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // CameraRecording -> ThreatDetection (Many-to-One, optional)
             modelBuilder.Entity<CameraRecording>()
@@ -162,28 +162,28 @@ namespace SafeRouteDashBoard.Data
                 .HasOne(d => d.Driver)
                 .WithMany(dr => dr.Deliveries)
                 .HasForeignKey(d => d.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // SafetyScore -> Driver (Many-to-One)
             modelBuilder.Entity<SafetyScore>()
                 .HasOne(ss => ss.Driver)
                 .WithMany(d => d.SafetyScores)
                 .HasForeignKey(ss => ss.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // EmergencyContact -> Driver (Many-to-One)
             modelBuilder.Entity<EmergencyContact>()
                 .HasOne(ec => ec.Driver)
                 .WithMany(d => d.EmergencyContacts)
                 .HasForeignKey(ec => ec.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // DeviceStatus -> Driver (Many-to-One)
             modelBuilder.Entity<DeviceStatus>()
                 .HasOne(ds => ds.Driver)
                 .WithMany(d => d.DeviceStatuses)
                 .HasForeignKey(ds => ds.DriverId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         private void ConfigureDecimalPrecision(ModelBuilder modelBuilder)

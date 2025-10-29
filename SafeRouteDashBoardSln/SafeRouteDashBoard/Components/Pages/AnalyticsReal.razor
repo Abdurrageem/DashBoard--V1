@@ -1,4 +1,5 @@
 @page "/analytics"
+@rendermode InteractiveServer
 @using SafeRouteDashBoard.Services
 @using Microsoft.JSInterop
 @inject IAnalyticsService AnalyticsService
@@ -53,33 +54,29 @@
             <KpiCard Title="Active Drivers"
                      Value="@GetActiveDriversValue()"
                      Icon="@Icons.Material.Filled.DirectionsCar"
-                     Color="Color.Primary"
-                     Change="+5.2%"
-                     IsPositive="true" />
+                     IconColor="#3B82F6"
+                     ChangePercentage="5.2" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Title="Open Panic Alerts"
                      Value="@GetOpenAlertsValue()"
                      Icon="@Icons.Material.Filled.Warning"
-                     Color="Color.Error"
-                     Change="-12.3%"
-                     IsPositive="true" />
+                     IconColor="#EF4444"
+                     ChangePercentage="-12.3" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Title="Avg Safety Score"
                      Value="@GetSafetyScoreValue()"
                      Icon="@Icons.Material.Filled.Shield"
-                     Color="Color.Success"
-                     Change="+2.8%"
-                     IsPositive="true" />
+                     IconColor="#10B981"
+                     ChangePercentage="2.8" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Title="High-Risk Zones"
                      Value="@GetRiskZonesValue()"
                      Icon="@Icons.Material.Filled.Dangerous"
-                     Color="Color.Warning"
-                     Change="-1"
-                     IsPositive="true" />
+                     IconColor="#F59E0B"
+                     ChangePercentage="-1" />
         </MudItem>
     </MudGrid>
 

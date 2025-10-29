@@ -23,9 +23,9 @@ namespace SafeRouteDashBoard
             // Add SignalR
             builder.Services.AddSignalR();
 
-            // Add Database Context Factory (for Blazor Server long-lived components)
+            // Add Database Context Factory (use SQL Server -> reads conn string from appsettings or user secrets)
             builder.Services.AddDbContextFactory<SafeRouteDbContext>(options =>
-                options.UseSqlite(builder.Configuration.GetConnectionString("SafeRouteDb")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("SafeRouteDb")));
 
             // Register application services
             builder.Services.AddScoped<IDriverService, DriverService>();
@@ -40,7 +40,7 @@ namespace SafeRouteDashBoard
 
             var app = builder.Build();
 
-            // Ensure database is created and seed data on startup
+            // Ensure database is reachable/created and (optionally) seed data on startup
             using (var scope = app.Services.CreateScope())
             {
                 var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SafeRouteDbContext>>();
@@ -50,24 +50,28 @@ namespace SafeRouteDashBoard
                 {
                     // Create context from factory
                     using var context = await contextFactory.CreateDbContextAsync();
-                    
-                    // Ensure database is created
-                    logger.LogInformation("Ensuring database is created...");
-                    await context.Database.EnsureCreatedAsync();
-                    logger.LogInformation("Database ready.");
 
-                    // OPTIONAL: Comment out the lines below to disable automatic seeding
-                    // Uncomment to enable dummy data on first run
-                    /*
-                    var seeder = scope.ServiceProvider.GetRequiredService<IDatabaseSeederService>();
-                    await seeder.SeedDatabaseAsync();
-                    */
-                    
-                    logger.LogInformation("Seeding disabled. Add real data via admin interface or API.");
+                    // Basic connectivity check & info (no sensitive data)
+                    var dataSource = context.Database.GetDbConnection().DataSource;
+                    var database = context.Database.GetDbConnection().Database;
+                    logger.LogInformation("Attempting DB connection to '{DataSource}' / DB '{Database}'...", dataSource, database);
+                    var canConnect = await context.Database.CanConnectAsync();
+                    if (!canConnect)
+                    {
+                        logger.LogError("Database connectivity check failed. Verify connection string and firewall/IP settings.");
+                    }
+
+                    // Ensure database exists (for simple demo). Prefer Migrations in production.
+                    await context.Database.EnsureCreatedAsync();
+                    logger.LogInformation("Database ready and reachable.");
+
+                    // OPTIONAL: seeding disabled by default
+                    // var seeder = scope.ServiceProvider.GetRequiredService<IDatabaseSeederService>();
+                    // await seeder.SeedDatabaseAsync();
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "An error occurred while creating/seeding the database");
+                    logger.LogError(ex, "An error occurred while connecting/initializing the database");
                     throw;
                 }
             }
@@ -76,12 +80,10 @@ namespace SafeRouteDashBoard
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
-
             app.UseStaticFiles();
             app.UseAntiforgery();
 
